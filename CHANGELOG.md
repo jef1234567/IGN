@@ -15,6 +15,22 @@ messages de commit et dans les commentaires des modules.
 
 ### Ajouté
 
+- **Un camp entier hors réseau, par l'horizon** (24 novembre 2026) : le
+  workflow « Camp hors réseau (horizon) » (`.github/workflows/horizon.yml`,
+  lancé à la main) fige une scène détaillée, puis range dans le dossier les
+  tuiles de l'horizon sur tout un terrain militaire d'OpenStreetMap
+  (Canjuers par défaut) : orthophoto jusqu'au zoom 18 et altitudes du RGE
+  ALTI (`outils/paquet_horizon.py`). Le service worker les sert avant le
+  réseau : le drone survole le camp sans connexion. Hors de la scène, la
+  photo est drapée sur le relief, sans bâti ni arbres en volume.
+  - `&horizon=18` descend l'horizon au zoom 18 (0,45 m par pixel à 44°),
+    au lieu de 17.
+  - Volume calculé, pas encore mesuré : 88 000 tuiles sur une emprise de
+    32 × 22 km, de l'ordre de 1,8 Go à 21 Ko la tuile (moyenne mesurée à
+    Notre-Dame) ; moins sur le seul contour du camp.
+  - Le calque scénario pose ses effets sur l'horizon hors de la scène, et
+    `outils/scenario.py` prend `--centre` et `--rayon` au lieu de CENZUB.
+
 - **Calque scénario (CENZUB), première étape** : un tableur à part
   (`cenzub/scenario-modele.xlsx` : feuilles Scénario, Points, Événements)
   converti en `scenario.json` par `outils/scenario.py`, qui refuse le fichier

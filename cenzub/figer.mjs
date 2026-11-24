@@ -104,7 +104,10 @@ fs.copyFileSync(path.join(ICI, 'sw.js'), path.join(sortie, 'sw.js'));
 // réseau, ou republié par le workflow scenario.yml.
 const scenario = process.env.SCENARIO;
 if (scenario) fs.copyFileSync(scenario, path.join(sortie, 'scenario.json'));
-const point = new URL(url).search + (avecRoofer ? '&roofer=1' : '') + '&scenario=scenario.json';
+// HORIZON=18 : l'horizon descend au zoom 18, pour un paquet de tuiles
+// (outils/paquet_horizon.py --zoom-max 18) rangé ensuite dans le dossier.
+const point = new URL(url).search + (avecRoofer ? '&roofer=1' : '') + '&scenario=scenario.json'
+  + (process.env.HORIZON === '18' ? '&horizon=18' : '');
 fs.writeFileSync(path.join(sortie, 'index.html'),
   fs.readFileSync(path.join(ICI, 'entree.html'), 'utf8').replace('__POINT__', point));
 fs.copyFileSync(path.join(ICI, 'servir.ps1'), path.join(sortie, 'servir.ps1'));

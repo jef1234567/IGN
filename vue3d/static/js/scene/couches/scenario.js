@@ -11,7 +11,8 @@
 import * as THREE from 'three';
 import { scene, soleil, camera, renderer } from '../socle/rendu.js';
 import { toLocal } from '../socle/projection.js';
-import { ySol } from '../terrain/etat.js';
+import { BORNES } from '../terrain/etat.js';
+import { ySolPartout } from '../terrain/horizon.js';
 import { poserSurLeRelief } from '../terrain/relief.js';
 import { etatCouche } from '../interface/etat-couche.js';
 
@@ -110,7 +111,13 @@ function creerFumigene(ev, ventScenario) {
     const pas = DUREE_BOUFFEE_S / BOUFFEES;
     return {
         ev, objet: points,
-        placer() { points.position.y = ySol(ev.lon, ev.lat); },
+        // Hors de la scène, le sol est celui de l'horizon, plus fin à mesure
+        // que ses tuiles arrivent : `aReplacer` le fait relire (replacerHorsScene).
+        placer() {
+            const y = ySolPartout(ev.lon, ev.lat);
+            points.position.y = y ?? 0;
+            this.aReplacer = !dansLaScene(ev.lon, ev.lat);
+        },
         maj(t) {
             const actif = t >= ev.debut && t <= ev.fin + DUREE_BOUFFEE_S;
             points.visible = actif;
@@ -264,6 +271,17 @@ async function charger() {
     // Le relief peut être déjà là : construire tout de suite, il replacera.
     construire();
 }
+
+function dansLaScene(lon, lat) {
+    return lon >= BORNES.o && lon <= BORNES.e && lat >= BORNES.s && lat <= BORNES.n;
+}
+
+// Toutes les REPLACER_MS, les effets hors de la scène relisent leur sol :
+// l'horizon s'affine au fil du vol, et ses tuiles fines ne sont chargées que
+// près de la caméra. Quelques effets, quelques lectures de tuile : rien à
+// mesurer face au rendu.
+const REPLACER_MS = 2000;
+setInterval(() => { for (const e of effets) if (e.aReplacer) e.placer(); }, REPLACER_MS);
 
 poserSurLeRelief({
     // Arrivé avant le scénario, le relief le trouve vide ; après, il replace.

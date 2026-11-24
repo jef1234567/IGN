@@ -3,16 +3,10 @@
 import * as THREE from 'three';
 import { ARTEFACT } from '../socle/chargement.js';
 import { toLonLat, POINTS_CARDINAUX } from '../socle/projection.js';
-import {
-    terrain, altitudeRef, relief, exagVert, anneauRelief, BORNES, ySol,
-} from '../terrain/etat.js';
+import { altitudeRef, exagVert, BORNES } from '../terrain/etat.js';
 import { scene, camera, controls } from '../socle/rendu.js';
 import { groupeBatiments } from '../batiments/etat.js';
-import { versPixel } from '../terrain/relief.js';
-import {
-    HORIZON_ZOOM_MIN, HORIZON_ZOOM_MAX, HORIZON_MAILLES, RAYON_TERRE_APPARENT, tuilesHorizon,
-    horizonMontre,
-} from '../terrain/horizon.js';
+import { ySolPartout } from '../terrain/horizon.js';
 import { btnOrbit, vitesse, arreterOrbite } from './boutons.js';
 import { decalage, aideVue, placerFleches } from './decalage.js';
 
@@ -100,23 +94,6 @@ const ombreDrone = new THREE.Mesh(new THREE.CircleGeometry(0.7, 24), new THREE.M
 ombreDrone.rotation.x = -Math.PI / 2;
 groupeDrone.add(modeleDrone, ombreDrone);
 
-/** Altitude de l'horizon sous un point, sur sa tuile chargée la plus fine ; null sinon. */
-function altitudeHorizon(lon, lat, x, z) {
-    const N = HORIZON_MAILLES, L = N + 1;
-    for (let niveau = HORIZON_ZOOM_MAX; niveau >= HORIZON_ZOOM_MIN; niveau--) {
-        const [px, py] = versPixel(lon, lat, niveau);
-        const t = tuilesHorizon.get(`${niveau}/${Math.floor(px / 256)}/${Math.floor(py / 256)}`);
-        if (!t || !t.mesh) continue;
-        const fx = (px / 256 - t.x) * N, fy = (py / 256 - t.y) * N;
-        const i = Math.min(Math.floor(fx), N - 1), j = Math.min(Math.floor(fy), N - 1);
-        const ax = fx - i, ay = fy - j, k = j * L + i;
-        const h = (t.alts[k] * (1 - ax) + t.alts[k + 1] * ax) * (1 - ay)
-                + (t.alts[k + L] * (1 - ax) + t.alts[k + L + 1] * ax) * ay;
-        return (h - altitudeRef) * exagVert - (x * x + z * z) / (2 * RAYON_TERRE_APPARENT);
-    }
-    return null;
-}
-
 const rayonSol = new THREE.Raycaster(), versLeBas = new THREE.Vector3(0, -1, 0), origineSol = new THREE.Vector3();
 /**
  * Y de ce que l'on survole en (x, z), en unités de scène : le terrain fin,
@@ -126,12 +103,7 @@ const rayonSol = new THREE.Raycaster(), versLeBas = new THREE.Vector3(0, -1, 0),
 function solSous(x, z, toits) {
     const [lon, lat] = toLonLat(x, -z);
     const dansEmprise = lon >= BORNES.o && lon <= BORNES.e && lat >= BORNES.s && lat <= BORNES.n;
-    let y = null;
-    if (!relief) y = 0;     // sans relief, tout repose sur le plan à 0
-    else if (terrain && dansEmprise) y = ySol(lon, lat);
-    else if (anneauRelief && Number.isFinite(anneauRelief.alt(lon, lat))) {
-        y = (anneauRelief.alt(lon, lat) - altitudeRef) * exagVert;
-    } else if (horizonMontre) y = altitudeHorizon(lon, lat, x, z);
+    let y = ySolPartout(lon, lat);
     if (toits && dansEmprise) {
         rayonSol.set(origineSol.set(x, DRONE_PLAFOND + 1000, z), versLeBas);
         const toit = rayonSol.intersectObjects(groupeBatiments.children, true)[0];
