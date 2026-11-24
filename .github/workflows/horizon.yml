@@ -29,7 +29,7 @@ on:
         default: ""
 
 permissions:
-  contents: read
+  contents: write
 
 concurrency:
   group: horizon
@@ -106,6 +106,20 @@ jobs:
           sur tout le camp (zone.json). Activer le drone et quitter la scène :
           l'horizon reste net au-dessus du camp, sans réseau.
           FIN
+      - name: Essai hors réseau (Chrome sans DNS)
+        run: |
+          nohup python3 -m http.server -d site 8081 > acces.log 2>&1 &
+          sleep 2
+          CHROME=$(which google-chrome) node cenzub/essai-hors-reseau.mjs http://localhost:8081/ site hors-reseau.png
+          echo "Tuiles servies par le paquet : $(grep -c 'GET /tuiles/' acces.log)"
+          echo "  dont zoom 18 : $(grep -c 'GET /tuiles/ortho/18/' acces.log), altitudes : $(grep -c 'GET /tuiles/alti/' acces.log)"
+      - name: Capture hors réseau (branche apercus)
+        if: always()
+        run: |
+          test -f hors-reseau.png || exit 0
+          mkdir -p /tmp/ap && cp hors-reseau.png /tmp/ap/ && cd /tmp/ap && git init -q -b apercus-horizon
+          git add hors-reseau.png && git -c user.name=ci -c user.email=ci@localhost commit -q -m "capture ${GITHUB_SHA::7}"
+          git push -qf "https://x-access-token:${{ github.token }}@github.com/${{ github.repository }}" apercus-horizon
       - uses: actions/upload-artifact@v4
         with:
           name: camp-hors-reseau
