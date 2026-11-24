@@ -15,6 +15,23 @@ messages de commit et dans les commentaires des modules.
 
 ### Ajouté
 
+- **Éditeur de scénario : manœuvre complète.** Tracés de manœuvre (limites,
+  flèches, zones et objectifs, amis, ennemis ou neutres), phases sur la frise,
+  heure H (la frise affiche H+mm), action de l'unité à chaque point de son
+  itinéraire, allure par unité. Les tracés sont aussi posés sur le relief de
+  la vue 3D, et la frise y nomme la phase en cours. Exemple publié
+  (`cenzub/scenario.json`) : un GTIA à trois compagnies, deux devant et une
+  en appui, contre une compagnie ennemie qui recule dans le village.
+
+### Corrigé
+
+- **Itinéraire d'une unité** : un clic sans avancer la frise remplaçait le
+  point à la même heure, et l'unité ne bougeait jamais. Le point est
+  maintenant ajouté, son heure tirée de la distance et de l'allure de
+  l'unité, et la frise l'y suit.
+- **Début de la frise** : le changer ne décale plus tout le scénario
+  (bouton « Décaler… » pour cela) ; les événements gardent leur heure.
+
 - **Éditeur de scénario sur la carte** (`editeur.html`, lien « Éditeur de
   scénario » du panneau) : l'orthophoto de la scène en 2D, où l'on pose à
   l'heure de la frise des fumigènes, des jalons et des unités APP-6 (ami ou

@@ -1,0 +1,751 @@
+{
+ "format": "scenario-cenzub",
+ "version": 1,
+ "titre": "Exemple : attaque d'un GTIA sur Jeoffrécourt",
+ "date": "2026-11-24",
+ "debut": 19800,
+ "fin": 27000,
+ "heure_h": 21600,
+ "vent": {
+  "de": 200,
+  "vitesse": 3
+ },
+ "points": {},
+ "evenements": [
+  {
+   "type": "phase",
+   "debut": 19800,
+   "fin": 21600,
+   "libelle": "Phase 1 : mise en place",
+   "id": "ex01"
+  },
+  {
+   "type": "trace",
+   "debut": 19800,
+   "libelle": "LD",
+   "params": {
+    "forme": "ligne",
+    "camp": "neutre",
+    "points": [
+     {
+      "lat": 49.540998,
+      "lon": 3.959578
+     },
+     {
+      "lat": 49.540998,
+      "lon": 3.973422
+     }
+    ]
+   },
+   "id": "ex07"
+  },
+  {
+   "type": "trace",
+   "debut": 19800,
+   "libelle": "PL BLEU (lisière sud)",
+   "params": {
+    "forme": "ligne",
+    "camp": "neutre",
+    "points": [
+     {
+      "lat": 49.543325,
+      "lon": 3.959855
+     },
+     {
+      "lat": 49.543325,
+      "lon": 3.973145
+     }
+    ]
+   },
+   "id": "ex08"
+  },
+  {
+   "type": "trace",
+   "debut": 19800,
+   "libelle": "Limite 1re / 2e Cie",
+   "params": {
+    "forme": "ligne",
+    "camp": "neutre",
+    "points": [
+     {
+      "lat": 49.538169,
+      "lon": 3.9665
+     },
+     {
+      "lat": 49.543325,
+      "lon": 3.9665
+     }
+    ]
+   },
+   "fin": 24000,
+   "id": "ex09"
+  },
+  {
+   "type": "trace",
+   "debut": 19800,
+   "libelle": "OBJ ALPHA",
+   "params": {
+    "forme": "zone",
+    "camp": "ami",
+    "points": [
+     {
+      "lat": 49.546658,
+      "lon": 3.961931
+     },
+     {
+      "lat": 49.546658,
+      "lon": 3.971069
+     },
+     {
+      "lat": 49.548921,
+      "lon": 3.971069
+     },
+     {
+      "lat": 49.548921,
+      "lon": 3.961931
+     }
+    ]
+   },
+   "id": "ex10"
+  },
+  {
+   "type": "trace",
+   "debut": 19800,
+   "libelle": "1re Cie",
+   "params": {
+    "forme": "fleche",
+    "camp": "ami",
+    "points": [
+     {
+      "lat": 49.539112,
+      "lon": 3.964008
+     },
+     {
+      "lat": 49.542256,
+      "lon": 3.964077
+     },
+     {
+      "lat": 49.544771,
+      "lon": 3.964285
+     },
+     {
+      "lat": 49.547475,
+      "lon": 3.9647
+     }
+    ]
+   },
+   "fin": 25800,
+   "id": "ex12"
+  },
+  {
+   "type": "trace",
+   "debut": 19800,
+   "libelle": "2e Cie",
+   "params": {
+    "forme": "fleche",
+    "camp": "ami",
+    "points": [
+     {
+      "lat": 49.539112,
+      "lon": 3.968992
+     },
+     {
+      "lat": 49.542256,
+      "lon": 3.968923
+     },
+     {
+      "lat": 49.544771,
+      "lon": 3.968715
+     },
+     {
+      "lat": 49.547475,
+      "lon": 3.9683
+     }
+    ]
+   },
+   "fin": 25800,
+   "id": "ex13"
+  },
+  {
+   "type": "trace",
+   "debut": 19800,
+   "libelle": "Cie ennemie",
+   "params": {
+    "forme": "zone",
+    "camp": "ennemi",
+    "points": [
+     {
+      "lat": 49.543325,
+      "lon": 3.961931
+     },
+     {
+      "lat": 49.543325,
+      "lon": 3.971069
+     },
+     {
+      "lat": 49.54779,
+      "lon": 3.971069
+     },
+     {
+      "lat": 49.54779,
+      "lon": 3.961931
+     }
+    ]
+   },
+   "fin": 24000,
+   "id": "ex14"
+  },
+  {
+   "type": "unite",
+   "debut": 19800,
+   "fin": 26520,
+   "libelle": "1re Cie",
+   "lat": 49.538169,
+   "lon": 3.963731,
+   "params": {
+    "camp": "ami",
+    "arme": "infanterie",
+    "echelon": "compagnie",
+    "pc": false,
+    "sidc": "SFGPUCI----E---",
+    "trajet": [
+     {
+      "t": 19800,
+      "lat": 49.538169,
+      "lon": 3.963731,
+      "action": "mise en place"
+     },
+     {
+      "t": 21600,
+      "lat": 49.540873,
+      "lon": 3.964008,
+      "action": "débouché"
+     },
+     {
+      "t": 22920,
+      "lat": 49.543136,
+      "lon": 3.964216,
+      "action": "abordage"
+     },
+     {
+      "t": 23700,
+      "lat": 49.543639,
+      "lon": 3.964216,
+      "action": "fouille"
+     },
+     {
+      "t": 24900,
+      "lat": 49.545148,
+      "lon": 3.964423,
+      "action": "fouille"
+     },
+     {
+      "t": 25800,
+      "lat": 49.546846,
+      "lon": 3.9647,
+      "action": "assaut OBJ ALPHA"
+     },
+     {
+      "t": 26520,
+      "lat": 49.547475,
+      "lon": 3.9647,
+      "action": "réarticulation"
+     }
+    ]
+   },
+   "id": "ex16"
+  },
+  {
+   "type": "unite",
+   "debut": 19800,
+   "fin": 26640,
+   "libelle": "2e Cie",
+   "lat": 49.538169,
+   "lon": 3.969269,
+   "params": {
+    "camp": "ami",
+    "arme": "infanterie",
+    "echelon": "compagnie",
+    "pc": false,
+    "sidc": "SFGPUCI----E---",
+    "trajet": [
+     {
+      "t": 19800,
+      "lat": 49.538169,
+      "lon": 3.969269,
+      "action": "mise en place"
+     },
+     {
+      "t": 21600,
+      "lat": 49.540873,
+      "lon": 3.968992,
+      "action": "débouché"
+     },
+     {
+      "t": 23040,
+      "lat": 49.543136,
+      "lon": 3.968784,
+      "action": "abordage"
+     },
+     {
+      "t": 23880,
+      "lat": 49.543639,
+      "lon": 3.968784,
+      "action": "fouille"
+     },
+     {
+      "t": 25080,
+      "lat": 49.545148,
+      "lon": 3.968577,
+      "action": "fouille"
+     },
+     {
+      "t": 25920,
+      "lat": 49.546846,
+      "lon": 3.9683,
+      "action": "assaut OBJ ALPHA"
+     },
+     {
+      "t": 26640,
+      "lat": 49.547475,
+      "lon": 3.9683,
+      "action": "réarticulation"
+     }
+    ]
+   },
+   "id": "ex17"
+  },
+  {
+   "type": "unite",
+   "debut": 19800,
+   "fin": 26400,
+   "libelle": "3e Cie (appui)",
+   "lat": 49.537854,
+   "lon": 3.9665,
+   "params": {
+    "camp": "ami",
+    "arme": "infanterie",
+    "echelon": "compagnie",
+    "pc": false,
+    "sidc": "SFGPUCI----E---",
+    "trajet": [
+     {
+      "t": 19800,
+      "lat": 49.537854,
+      "lon": 3.9665,
+      "action": "mise en place"
+     },
+     {
+      "t": 21300,
+      "lat": 49.540998,
+      "lon": 3.9665,
+      "action": "appui feu"
+     },
+     {
+      "t": 24300,
+      "lat": 49.540998,
+      "lon": 3.9665,
+      "action": "bond"
+     },
+     {
+      "t": 25080,
+      "lat": 49.54301,
+      "lon": 3.9665,
+      "action": "appui feu"
+     },
+     {
+      "t": 26400,
+      "lat": 49.544897,
+      "lon": 3.9665,
+      "action": "réserve"
+     }
+    ]
+   },
+   "id": "ex18"
+  },
+  {
+   "type": "unite",
+   "debut": 19800,
+   "fin": 25200,
+   "libelle": "PC GTIA",
+   "lat": 49.53798,
+   "lon": 3.967331,
+   "params": {
+    "camp": "ami",
+    "arme": "infanterie",
+    "echelon": "bataillon",
+    "pc": true,
+    "sidc": "SFGPUCI---AF---",
+    "trajet": [
+     {
+      "t": 19800,
+      "lat": 49.53798,
+      "lon": 3.967331
+     },
+     {
+      "t": 24300,
+      "lat": 49.53798,
+      "lon": 3.967331,
+      "action": "bond"
+     },
+     {
+      "t": 25200,
+      "lat": 49.540621,
+      "lon": 3.967054
+     }
+    ]
+   },
+   "id": "ex19"
+  },
+  {
+   "type": "unite",
+   "debut": 19800,
+   "fin": 26280,
+   "libelle": "Sct ennemie Ouest",
+   "lat": 49.543828,
+   "lon": 3.964423,
+   "params": {
+    "camp": "ennemi",
+    "arme": "infanterie",
+    "echelon": "section",
+    "pc": false,
+    "sidc": "SHGPUCI----D---",
+    "trajet": [
+     {
+      "t": 19800,
+      "lat": 49.543828,
+      "lon": 3.964423,
+      "action": "défend la lisière"
+     },
+     {
+      "t": 23280,
+      "lat": 49.543828,
+      "lon": 3.964423,
+      "action": "repli"
+     },
+     {
+      "t": 24300,
+      "lat": 49.5454,
+      "lon": 3.964562,
+      "action": "freinage"
+     },
+     {
+      "t": 25200,
+      "lat": 49.546658,
+      "lon": 3.964562,
+      "action": "repli"
+     },
+     {
+      "t": 26280,
+      "lat": 49.549299,
+      "lon": 3.964146,
+      "action": "décroche"
+     }
+    ]
+   },
+   "id": "ex20"
+  },
+  {
+   "type": "unite",
+   "debut": 19800,
+   "fin": 26400,
+   "libelle": "Sct ennemie Est",
+   "lat": 49.543828,
+   "lon": 3.968577,
+   "params": {
+    "camp": "ennemi",
+    "arme": "infanterie",
+    "echelon": "section",
+    "pc": false,
+    "sidc": "SHGPUCI----D---",
+    "trajet": [
+     {
+      "t": 19800,
+      "lat": 49.543828,
+      "lon": 3.968577,
+      "action": "défend la lisière"
+     },
+     {
+      "t": 23460,
+      "lat": 49.543828,
+      "lon": 3.968577,
+      "action": "repli"
+     },
+     {
+      "t": 24480,
+      "lat": 49.5454,
+      "lon": 3.968438,
+      "action": "freinage"
+     },
+     {
+      "t": 25380,
+      "lat": 49.546658,
+      "lon": 3.968438,
+      "action": "repli"
+     },
+     {
+      "t": 26400,
+      "lat": 49.549299,
+      "lon": 3.968854,
+      "action": "décroche"
+     }
+    ]
+   },
+   "id": "ex21"
+  },
+  {
+   "type": "unite",
+   "debut": 19800,
+   "fin": 26700,
+   "libelle": "Sct ennemie Centre",
+   "lat": 49.546029,
+   "lon": 3.9665,
+   "params": {
+    "camp": "ennemi",
+    "arme": "infanterie",
+    "echelon": "section",
+    "pc": false,
+    "sidc": "SHGPUCI----D---",
+    "trajet": [
+     {
+      "t": 19800,
+      "lat": 49.546029,
+      "lon": 3.9665,
+      "action": "réserve"
+     },
+     {
+      "t": 24600,
+      "lat": 49.546155,
+      "lon": 3.9665,
+      "action": "recueil"
+     },
+     {
+      "t": 25800,
+      "lat": 49.547915,
+      "lon": 3.966223,
+      "action": "repli"
+     },
+     {
+      "t": 26700,
+      "lat": 49.550431,
+      "lon": 3.9665,
+      "action": "décroche"
+     }
+    ]
+   },
+   "id": "ex22"
+  },
+  {
+   "type": "unite",
+   "debut": 19800,
+   "fin": 25500,
+   "libelle": "PC Cie ennemie",
+   "lat": 49.546846,
+   "lon": 3.965946,
+   "params": {
+    "camp": "ennemi",
+    "arme": "infanterie",
+    "echelon": "compagnie",
+    "pc": true,
+    "sidc": "SHGPUCI---AE---",
+    "trajet": [
+     {
+      "t": 19800,
+      "lat": 49.546846,
+      "lon": 3.965946
+     },
+     {
+      "t": 24600,
+      "lat": 49.546846,
+      "lon": 3.965946,
+      "action": "repli"
+     },
+     {
+      "t": 25500,
+      "lat": 49.549487,
+      "lon": 3.965669
+     }
+    ]
+   },
+   "id": "ex23"
+  },
+  {
+   "type": "trace",
+   "debut": 21000,
+   "libelle": "Base de feux 3e Cie",
+   "params": {
+    "forme": "zone",
+    "camp": "ami",
+    "points": [
+     {
+      "lat": 49.540621,
+      "lon": 3.965392
+     },
+     {
+      "lat": 49.540621,
+      "lon": 3.967608
+     },
+     {
+      "lat": 49.541376,
+      "lon": 3.967608
+     },
+     {
+      "lat": 49.541376,
+      "lon": 3.965392
+     }
+    ]
+   },
+   "fin": 24600,
+   "id": "ex11"
+  },
+  {
+   "type": "phase",
+   "debut": 21600,
+   "fin": 23100,
+   "libelle": "Phase 2 : débouché, abordage de la lisière sud",
+   "id": "ex02"
+  },
+  {
+   "type": "jalon",
+   "debut": 21600,
+   "libelle": "H : franchissement de la LD",
+   "id": "ex05"
+  },
+  {
+   "type": "fumigene",
+   "debut": 21900,
+   "fin": 22500,
+   "libelle": "Masque du débouché (1re Cie)",
+   "lat": 49.542382,
+   "lon": 3.964146,
+   "params": {
+    "couleur": "blanc",
+    "taille_m": 30
+   },
+   "id": "ex24"
+  },
+  {
+   "type": "fumigene",
+   "debut": 21960,
+   "fin": 22560,
+   "libelle": "Masque du débouché (2e Cie)",
+   "lat": 49.542382,
+   "lon": 3.968854,
+   "params": {
+    "couleur": "blanc",
+    "taille_m": 30
+   },
+   "id": "ex25"
+  },
+  {
+   "type": "fumigene",
+   "debut": 22920,
+   "fin": 23040,
+   "libelle": "Levée des tirs : 1re Cie en lisière",
+   "lat": 49.543136,
+   "lon": 3.964216,
+   "params": {
+    "couleur": "violet",
+    "taille_m": 8
+   },
+   "id": "ex26"
+  },
+  {
+   "type": "fumigene",
+   "debut": 23040,
+   "fin": 23160,
+   "libelle": "Levée des tirs : 2e Cie en lisière",
+   "lat": 49.543136,
+   "lon": 3.968784,
+   "params": {
+    "couleur": "violet",
+    "taille_m": 8
+   },
+   "id": "ex27"
+  },
+  {
+   "type": "phase",
+   "debut": 23100,
+   "fin": 25500,
+   "libelle": "Phase 3 : réduction du village",
+   "id": "ex03"
+  },
+  {
+   "type": "trace",
+   "debut": 23400,
+   "libelle": "Repli ennemi",
+   "params": {
+    "forme": "fleche",
+    "camp": "ennemi",
+    "points": [
+     {
+      "lat": 49.546343,
+      "lon": 3.9665
+     },
+     {
+      "lat": 49.548921,
+      "lon": 3.9665
+     },
+     {
+      "lat": 49.551059,
+      "lon": 3.967054
+     }
+    ]
+   },
+   "fin": 26700,
+   "id": "ex15"
+  },
+  {
+   "type": "fumigene",
+   "debut": 24240,
+   "fin": 24720,
+   "libelle": "Masque du bond de la 3e Cie",
+   "lat": 49.541879,
+   "lon": 3.9665,
+   "params": {
+    "couleur": "blanc",
+    "taille_m": 25
+   },
+   "id": "ex28"
+  },
+  {
+   "type": "phase",
+   "debut": 25500,
+   "fin": 27000,
+   "libelle": "Phase 4 : conquête d'OBJ ALPHA, réarticulation",
+   "id": "ex04"
+  },
+  {
+   "type": "fumigene",
+   "debut": 25560,
+   "fin": 25680,
+   "libelle": "Désignation d'OBJ ALPHA",
+   "lat": 49.547035,
+   "lon": 3.9665,
+   "params": {
+    "couleur": "rouge",
+    "taille_m": 8
+   },
+   "id": "ex29"
+  },
+  {
+   "type": "jalon",
+   "debut": 26400,
+   "libelle": "OBJ ALPHA conquis",
+   "id": "ex06"
+  },
+  {
+   "type": "fumigene",
+   "debut": 26520,
+   "fin": 26640,
+   "libelle": "OBJ ALPHA tenu",
+   "lat": 49.547475,
+   "lon": 3.9647,
+   "params": {
+    "couleur": "vert",
+    "taille_m": 8
+   },
+   "id": "ex30"
+  }
+ ]
+}

@@ -7,7 +7,7 @@ Ce dépôt reprend [Vue 3D IGN](https://github.com/ysimonx/vue-3d-ign) de Yannic
 
 ### Calque scénario
 
-**Éditeur sur la carte** : `editeur.html` (lien « Éditeur de scénario » du panneau de la vue 3D). Choisir un outil (Fumigène, Unité, + Jalon), régler l'heure sur la frise, cliquer sur la carte. Pour l'itinéraire d'une unité : avancer la frise, cliquer, recommencer. Le brouillon reste dans le navigateur ; « Voir en 3D » le rejoue ; « Exporter » donne le `scenario.json` à poser dans le dossier du site (hors réseau) ou à pousser en `cenzub/scenario.json`.
+**Éditeur sur la carte** : `editeur.html` (lien « Éditeur de scénario » du panneau de la vue 3D). Choisir un outil (Fumigène, Unité, Tracé, + Jalon, + Phase), régler l'heure sur la frise, cliquer sur la carte. Itinéraire d'une unité : cliquer ses points dans l'ordre ; leur heure vient de l'allure de l'unité, ou de la frise si on l'avance. Tracé : cliquer ses points, double-clic pour finir. L'exemple publié (`cenzub/scenario.json`, bouton « Scénario publié ») montre une attaque de GTIA ; ses lieux sont placés autour du centre de la scène, pas sur le plan exact du village. Le brouillon reste dans le navigateur ; « Voir en 3D » le rejoue ; « Exporter » donne le `scenario.json` à poser dans le dossier du site (hors réseau) ou à pousser en `cenzub/scenario.json`.
 
 **Ou au tableur** :
 

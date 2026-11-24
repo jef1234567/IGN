@@ -400,4 +400,6 @@ html.tiroir #avis { bottom:calc(20px + var(--credits-h, 0px)); }
                  border:0; border-radius:2px; background:#8b949e; opacity:.6; cursor:pointer; }
 #frise .repere.fumigene { background:#cfd6dd; }
 #frise .repere.jalon { width:3px; background:var(--accent); }
+#frise .repere.phase { height:4px; background:#f0c674; border-radius:0; }
+#frise .repere.trace { display:none; }
 #frise .repere.passe { opacity:1; }

@@ -7,8 +7,14 @@
 //     evenements: [ { id, type, debut, fin?, libelle?, lat?, lon?, params? } ] }
 // Les heures sont des secondes depuis 00:00 du jour du scénario.
 //
-// Une unité porte son itinéraire, des points horodatés :
-//   params: { camp, arme, echelon, pc, nom, sidc, trajet: [ { t, lat, lon } ] }
+// Une unité porte son itinéraire, des points horodatés (action : « assaut »,
+// « appui feu »… ce que l'unité fait à partir de ce point) :
+//   params: { camp, arme, echelon, pc, sidc, vitesse_kmh,
+//             trajet: [ { t, lat, lon, action? } ] }
+// Un tracé de manœuvre (limite, flèche, zone), visible de debut à fin :
+//   params: { forme: ligne|fleche|zone, camp, points: [ { lat, lon } ] }
+// Une phase : debut, fin, libelle. `heure_h`, facultative : l'heure H, d'où
+// les heures relatives (H+20).
 // Le code SIDC (MIL-STD-2525C / APP-6, en lettres) est écrit en entier, pour
 // qu'un outil tiers (un OPO traduit en scénario) puisse donner le sien sans
 // passer par ces listes.
@@ -42,6 +48,16 @@ export const ECHELONS = {
     regiment: ['Régiment', 'G'], brigade: ['Brigade', 'H'],
 };
 
+// Allure sur l'itinéraire, quand un point est ajouté sans avancer la frise :
+// son heure vient de la distance au point précédent. Ordres de grandeur
+// d'une progression en zone urbaine, à corriger unité par unité.
+export const VITESSES_KMH = {
+    infanterie: 2, meca: 10, blinde: 10, reco: 15, genie: 2, artillerie: 10, sol_air: 10, soutien: 10,
+};
+
+export const FORMES = { ligne: ['Limite / ligne'], fleche: ['Flèche'], zone: ['Zone / objectif'] };
+export const COULEURS_CAMP = { ami: '#3b82e6', ennemi: '#e0533f', neutre: '#1c1c1c' };
+
 /** SIDC à 15 lettres : S, camp, G (terrestre), P (présent), fonction, PC, échelon. */
 export function sidc({ camp = 'ami', arme = 'infanterie', echelon = 'section', pc = false } = {}) {
     return `S${CAMPS[camp] || 'F'}GP${(ARMES[arme] || ARMES.infanterie)[1]}`
@@ -70,6 +86,24 @@ export function texteHeure(s, secondes = true) {
     const j = Math.floor(s / 86400), r = ((s % 86400) + 86400) % 86400;
     const hm = `${String(Math.floor(r / 3600)).padStart(2, '0')}:${String(Math.floor(r / 60) % 60).padStart(2, '0')}`;
     return hm + (secondes ? `:${String(Math.floor(r) % 60).padStart(2, '0')}` : '') + (j > 0 ? ' (J+1)' : '');
+}
+
+/** H+20, H-05, H+1h05 : l'heure relative à l'heure H. */
+export function texteRelatif(s, h) {
+    if (h == null) return '';
+    const d = Math.round((s - h) / 60), a = Math.abs(d);
+    return `H${d < 0 ? '-' : '+'}${a >= 60 ? `${Math.floor(a / 60)}h${String(a % 60).padStart(2, '0')}` : String(a).padStart(2, '0')}`;
+}
+
+/** La phase en cours à l'instant t, ou null. */
+export function phaseEnCours(scenario, t) {
+    return scenario.evenements.find(e => e.type === 'phase' && t >= e.debut && t < (e.fin ?? e.debut)) || null;
+}
+
+/** Distance en mètres entre deux points proches. */
+export function distanceM(a, b) {
+    const dy = (b.lat - a.lat) * 111320, dx = (b.lon - a.lon) * 111320 * Math.cos(a.lat * Math.PI / 180);
+    return Math.hypot(dx, dy);
 }
 
 /** « 06:30 » → secondes ; une heure avant `debut` est celle du lendemain. */
