@@ -5,11 +5,6 @@ name: Camp hors réseau (horizon)
 # réseau. Lancé à la main ; ne publie rien sur GitHub Pages (un seul site par
 # dépôt, celui de CENZUB, et 1 Go au plus), le dossier part en artefact.
 on:
-  # Essai sur la branche du paquet (à retirer à la fusion : un push sur main
-  # ne doit pas relancer trois heures de lecture).
-  push:
-    branches: [horizon-hors-reseau]
-    paths: ['.github/workflows/horizon.yml', 'outils/paquet_horizon.py', 'cenzub/**', 'zones/**']
   workflow_dispatch:
     inputs:
       camp:
