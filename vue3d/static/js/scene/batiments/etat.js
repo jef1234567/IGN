@@ -71,3 +71,39 @@ let redessin = () => {};
 export function poserRedessinDesBatiments(fn) { redessin = fn; }
 /** Les bâtiments reconstruits, et la fiche du bâtiment visé avec eux. */
 export function redessinerBatiments() { redessin(); }
+
+// Façades : fenêtres et étages dessinés par le shader sur les faces verticales
+// (étage de 3 m, travée de 3,2 m), sans UV ni texture. Repère monde : les
+// lignes d'étage suivent l'altitude, les travées la longueur du mur.
+function ajouterFacades(materiau, teinteMur) {
+    materiau.onBeforeCompile = shader => {
+        shader.vertexShader = 'varying vec3 vPosFacade;\n' + shader.vertexShader.replace(
+            '#include <project_vertex>',
+            '#include <project_vertex>\nvPosFacade = (modelMatrix * vec4(transformed, 1.0)).xyz;');
+        shader.fragmentShader = 'varying vec3 vPosFacade;\n' + shader.fragmentShader.replace(
+            '#include <color_fragment>',
+            `#include <color_fragment>
+            {
+                vec3 nF = normalize(cross(dFdx(vPosFacade), dFdy(vPosFacade)));
+                if (abs(nF.y) < 0.25) {
+                    vec2 tg = normalize(vec2(-nF.z, nF.x));
+                    float u = dot(vPosFacade.xz, tg) / 3.2;
+                    float v = vPosFacade.y / 3.0;
+                    vec2 f = fract(vec2(u, v));
+                    vec3 mur = ${teinteMur};
+                    // bandeau d'étage
+                    if (f.y < 0.04) mur *= 0.82;
+                    // fenêtre et son encadrement
+                    float dansF = step(0.30, f.x) * step(f.x, 0.70) * step(0.28, f.y) * step(f.y, 0.78);
+                    float cadre = step(0.27, f.x) * step(f.x, 0.73) * step(0.25, f.y) * step(f.y, 0.81) - dansF;
+                    vec3 vitre = mix(vec3(0.16, 0.20, 0.25), vec3(0.30, 0.36, 0.42), f.y);
+                    mur = mix(mur, vec3(0.93), cadre);
+                    mur = mix(mur, vitre, dansF);
+                    diffuseColor.rgb = mur;
+                }
+            }`);
+    };
+    materiau.customProgramCacheKey = () => 'facades-' + teinteMur;
+}
+ajouterFacades(MAT_VOISIN, 'vec3(0.86, 0.84, 0.79)');
+ajouterFacades(MAT_CIBLE, 'vec3(0.84, 0.70, 0.58)');

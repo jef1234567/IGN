@@ -30,6 +30,7 @@ l'un ni l'autre, et n'est pas dessinée (SURSOL_HAUTEUR_MAX_M).
 
 import logging
 import math
+import os
 
 import numpy as np
 import shapely
@@ -790,7 +791,9 @@ def segmenter_emprise(grille, exg, batiments, vegetation, forets):
     essences, noms_essence = _essences_par_cellule(
         (forets or {}).get("features", []), lons, lats, "essence", sommets_)
     for cle in ("houppiers", "masses"):
-        if cle not in segments:
+        # VUE3D_SANS_MASSES : sans LiDAR (modèle MNS − MNT), les masses de sursol
+        # non végétal sont surtout des bavures des bâtiments sur leurs façades.
+        if cle not in segments or (cle == "masses" and os.environ.get("VUE3D_SANS_MASSES")):
             out[cle] = []
             continue
         labels, apex = segments[cle]

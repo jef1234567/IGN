@@ -7,7 +7,7 @@ on:
     paths: ['cenzub/**', 'vue3d/**', '.github/workflows/cenzub.yml']
 
 permissions:
-  contents: read
+  contents: write
   pages: write
   id-token: write
 
@@ -41,6 +41,7 @@ jobs:
           VUE3D_ROOFER_DELAI: "2400"
           VUE3D_ORTHO_PX_PAR_KM: "2400"
           VUE3D_RELIEF_POINTS_PAR_KM: "1024"
+          VUE3D_SANS_MASSES: "1"
         run: |
           mkdir -p cache
           VUE3D_CACHE=./cache VUE3D_QUOTA=1000 nohup flask --app vue3d.app run --port 8080 > serveur.log 2>&1 &
@@ -50,6 +51,12 @@ jobs:
       - name: Journal du serveur
         if: always()
         run: grep -v "api/tuile" serveur.log | grep -iE "roofer|nuage|WARNING|ERROR|Traceback|Error" | tail -n 60
+      - name: Aperçu (branche apercus)
+        run: |
+          mkdir -p /tmp/ap && cp site/apercu.png /tmp/ap/ && cd /tmp/ap && git init -q -b apercus
+          git -c user.name=ci -c user.email=ci@localhost commit -q --allow-empty -m apercu
+          git add apercu.png && git -c user.name=ci -c user.email=ci@localhost commit -q -m "aperçu ${GITHUB_SHA::7}"
+          git push -qf "https://x-access-token:${{ github.token }}@github.com/${{ github.repository }}" apercus
       - uses: actions/upload-artifact@v4
         with:
           name: cenzub-hors-reseau
