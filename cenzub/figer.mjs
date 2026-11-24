@@ -59,8 +59,13 @@ page.on('response', async reponse => {
 
 console.log('Ouverture de', url);
 await page.goto(url, { waitUntil: 'domcontentloaded', timeout: 120000 });
+// Un refus de l'IGN (503 du serveur) n'est pas un échec : la page réessaie
+// d'elle-même (« Nouvel essai dans 30 s »). Premier build de Canjuers, le
+// 24 novembre 2026 : un 400 sporadique du WMS arrêtait tout à la première
+// minute. Seule une indisponibilité sans nouvel essai arrête le figeage.
 await page.waitForFunction(() => document.getElementById('attente').hidden
-                             || /indisponible/.test(document.getElementById('attente').textContent),
+                             || (/indisponible/.test(document.getElementById('attente').textContent)
+                                 && !/Nouvel essai/.test(document.getElementById('attente').textContent)),
                            { timeout: 40 * 60 * 1000, polling: 2000 });
 const attente = await page.evaluate(() => document.getElementById('attente').textContent);
 if (!(await page.evaluate(() => document.getElementById('attente').hidden))) {
