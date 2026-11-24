@@ -31,6 +31,7 @@ const cleDe = u => (u.startsWith(base) ? u.slice(base.length) : u).split('#')[0]
 const navigateur = await puppeteer.launch({
   executablePath: process.env.CHROME || '/usr/bin/google-chrome',
   headless: 'new',
+  protocolTimeout: 60 * 60 * 1000,
   args: ['--use-angle=swiftshader', '--enable-unsafe-swiftshader', '--ignore-gpu-blocklist', '--no-sandbox'],
 });
 const page = await navigateur.newPage();
@@ -84,8 +85,8 @@ for (const couche of ['monuments', 'eoliennes', 'ortho']) {
   const cle = `api/${couche}?${requete}`;
   for (let essai = 1; essai <= 6 && !manifeste[cle]; essai++) {
     console.log(`${couche} : nouvel essai ${essai}`);
-    await page.evaluate(c => fetch(c).then(r => r.blob()).catch(() => {}), cle);
-    await new Promise(r => setTimeout(r, 20000));
+    await page.evaluate(c => { fetch(c).then(r => r.blob()).catch(() => {}); }, cle);
+    await new Promise(r => setTimeout(r, 60000));
   }
   console.log(cle, manifeste[cle] ? 'enregistrée' : 'ABSENTE');
 }
