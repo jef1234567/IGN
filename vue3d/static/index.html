@@ -104,7 +104,8 @@
                 <button class="toggle" id="t-dpe" title="Diagnostics de performance énergétique (ADEME) des bâtiments autour du point : lus au premier clic">DPE</button>
                 <button class="toggle" id="t-dvf" title="Ventes immobilières des cinq dernières années (DVF) autour du point : lues au premier clic">Ventes DVF</button>
                 <button class="toggle" id="t-bornes" title="Bornes de recharge pour véhicules électriques (base nationale IRVE, data.gouv.fr) autour du point : lues au premier clic">Bornes de recharge</button>
-                <button class="toggle" id="t-scenario" hidden title="Le scénario chargé : sa frise et ses effets (fumigènes)">Scénario</button>
+                <button class="toggle" id="t-scenario" hidden title="Le scénario chargé : sa frise et ses effets (fumigènes, unités)">Scénario</button>
+                <a class="toggle" id="lien-editeur" href="editeur.html" title="Placer fumigènes, jalons et unités sur la carte de la scène, au fil du temps">Éditeur de scénario</a>
                 <button class="toggle" id="t-solaire" title="Le soleil reçu par chaque toit sur une année type (PVGIS), avec l'ombre des bâtiments, des arbres et du relief : calculé au premier clic">Ensoleillement</button>
             </div>
             <div class="row">
@@ -592,6 +593,8 @@
   }
 }
 </script>
+<!-- Symboles APP-6 des unités du scénario (milsymbol, MIT) : window.ms. -->
+<script src="static/js/vendor/milsymbol.js"></script>
 <script type="module" src="static/js/scene/main.js"></script>
 </body>
 </html>

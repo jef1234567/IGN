@@ -7,6 +7,10 @@ Ce dépôt reprend [Vue 3D IGN](https://github.com/ysimonx/vue-3d-ign) de Yannic
 
 ### Calque scénario
 
+**Éditeur sur la carte** : `editeur.html` (lien « Éditeur de scénario » du panneau de la vue 3D). Choisir un outil (Fumigène, Unité, + Jalon), régler l'heure sur la frise, cliquer sur la carte. Pour l'itinéraire d'une unité : avancer la frise, cliquer, recommencer. Le brouillon reste dans le navigateur ; « Voir en 3D » le rejoue ; « Exporter » donne le `scenario.json` à poser dans le dossier du site (hors réseau) ou à pousser en `cenzub/scenario.json`.
+
+**Ou au tableur** :
+
 1. Copier `cenzub/scenario-modele.xlsx` en `cenzub/scenario.xlsx` et le remplir : feuille **Scénario** (titre, date, heures de début et de fin, vent), feuille **Points** (lieux nommés), feuille **Événements** (une ligne par événement : début, fin, type `fumigene` ou `jalon`, lieu, libellé, couleur, taille, vent propre facultatif).
 2. Vérifier : `pip install openpyxl && python outils/scenario.py cenzub/scenario.xlsx scenario.json` (chaque ligne fautive est listée).
 3. Pousser sur `main` : `scenario.yml` convertit le tableur et republie en quelques minutes le site déjà figé, sans reconstruire la scène. Hors réseau : remplacer `scenario.json` dans le dossier du site. En local : `?…&scenario=chemin/scenario.json`.
