@@ -63,17 +63,16 @@ if (!(await page.evaluate(() => document.getElementById('attente').hidden))) {
   throw new Error('Scène indisponible : ' + attente);
 }
 console.log('Scène affichée, attente des couches…');
-// Toits de roofer : bouton présent seulement si le service les a.
-const avecRoofer = await page.waitForFunction(() => !document.getElementById('t-roofer').hidden,
-                                              { timeout: 120000 }).then(() => true, () => false);
-if (avecRoofer) {
-  console.log('Calcul des toits roofer…');
-  await page.evaluate(() => document.getElementById('t-roofer').click());
-  await new Promise(r => setTimeout(r, 5000));
-  await page.waitForFunction(() => document.getElementById('etat-roofer').hidden,
-                             { timeout: 40 * 60 * 1000, polling: 3000 }).catch(() => console.log('roofer : délai dépassé'));
-  console.log('roofer :', await page.evaluate(() => document.getElementById('etat-roofer').textContent || 'ok'));
-} else console.log('roofer absent');
+// Toits de roofer : la page les demande d'elle-même ; le bouton paraît une
+// fois le calcul fini (plusieurs minutes sur une grande zone).
+console.log('Attente des toits roofer…');
+const avecRoofer = await page.waitForFunction(() => !document.getElementById('t-roofer').hidden
+    || /recharger/.test(document.getElementById('etat-roofer').textContent),
+  { timeout: 40 * 60 * 1000, polling: 3000 })
+  .then(() => page.evaluate(() => !document.getElementById('t-roofer').hidden && !document.getElementById('t-roofer').disabled),
+        () => false);
+console.log('roofer :', avecRoofer ? 'calculé' : 'absent',
+            await page.evaluate(() => document.getElementById('t-roofer').title));
 // Les couches à part (nuage, ouvrages, monuments, horizon) arrivent après.
 await page.waitForNetworkIdle({ idleTime: 15000, timeout: 20 * 60 * 1000 }).catch(() => {});
 await new Promise(r => setTimeout(r, 10000));
@@ -82,13 +81,9 @@ await navigateur.close();
 
 // La page et ses fichiers.
 fs.cpSync('vue3d/static', path.join(sortie, 'static'), { recursive: true });
-// Les toits de roofer s'affichent d'office dans la version figée.
-const auto = `<script>(function(){const t=setInterval(()=>{const b=document.getElementById('t-roofer');
-if(b&&!b.hidden){clearInterval(t);if(!b.classList.contains('on'))b.click();}},1000);setTimeout(()=>clearInterval(t),120000);})();</script>`;
-fs.writeFileSync(path.join(sortie, 'app.html'),
-  fs.readFileSync('vue3d/static/index.html', 'utf8').replace('</body>', (avecRoofer ? auto : '') + '</body>'));
+fs.copyFileSync('vue3d/static/index.html', path.join(sortie, 'app.html'));
 fs.copyFileSync(path.join(ICI, 'sw.js'), path.join(sortie, 'sw.js'));
-const point = new URL(url).search;
+const point = new URL(url).search + (avecRoofer ? '&roofer=1' : '');
 fs.writeFileSync(path.join(sortie, 'index.html'),
   fs.readFileSync(path.join(ICI, 'entree.html'), 'utf8').replace('__POINT__', point));
 fs.copyFileSync(path.join(ICI, 'servir.ps1'), path.join(sortie, 'servir.ps1'));
