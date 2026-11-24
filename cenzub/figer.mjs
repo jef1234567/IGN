@@ -6,6 +6,7 @@
 //   site/static/...          ses scripts et styles
 //   site/data/<hash>         chaque réponse enregistrée
 //   site/manifeste.json      adresse demandée -> [fichier, type]
+//   site/scenario.json       le scénario, si SCENARIO le donne (cherché toujours)
 //   site/sw.js, index.html   le service worker qui rejoue les réponses, et
 //                            la page d'entrée qui l'installe
 //
@@ -97,7 +98,13 @@ await navigateur.close();
 fs.cpSync('vue3d/static', path.join(sortie, 'static'), { recursive: true });
 fs.copyFileSync('vue3d/static/index.html', path.join(sortie, 'app.html'));
 fs.copyFileSync(path.join(ICI, 'sw.js'), path.join(sortie, 'sw.js'));
-const point = new URL(url).search + (avecRoofer ? '&roofer=1' : '');
+// Le calque scénario (SCENARIO : le scenario.json converti par
+// outils/scenario.py) : copié à côté de la page. La page le cherche toujours,
+// pour qu'on le change sans refiger la scène : remplacé dans le dossier hors
+// réseau, ou republié par le workflow scenario.yml.
+const scenario = process.env.SCENARIO;
+if (scenario) fs.copyFileSync(scenario, path.join(sortie, 'scenario.json'));
+const point = new URL(url).search + (avecRoofer ? '&roofer=1' : '') + '&scenario=scenario.json';
 fs.writeFileSync(path.join(sortie, 'index.html'),
   fs.readFileSync(path.join(ICI, 'entree.html'), 'utf8').replace('__POINT__', point));
 fs.copyFileSync(path.join(ICI, 'servir.ps1'), path.join(sortie, 'servir.ps1'));

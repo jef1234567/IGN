@@ -13,6 +13,21 @@ messages de commit et dans les commentaires des modules.
 
 ## Scène v16 — 21 novembre 2026
 
+### Ajouté
+
+- **Calque scénario (CENZUB), première étape** : un tableur à part
+  (`cenzub/scenario-modele.xlsx` : feuilles Scénario, Points, Événements)
+  converti en `scenario.json` par `outils/scenario.py`, qui refuse le fichier
+  en listant chaque ligne fautive. La page l'ouvre avec `?scenario=<chemin>` :
+  une frise (lecture ×1, ×10, ×60, curseur, clic sur un événement pour y
+  sauter) règle le soleil sur la date et l'heure du scénario et rejoue les
+  fumigènes (couleur, taille, vent). Les types explosion, incendie, unité et
+  nuit sont déjà du format et passent sur la frise ; leur rendu viendra. Le
+  site figé cherche toujours son `scenario.json` : changer de scénario ne
+  refige pas la scène. Le workflow `scenario.yml` republie le dernier site
+  construit avec le tableur converti, et hors réseau il suffit de remplacer
+  le fichier (24 novembre 2026).
+
 ### Changé
 
 - **Les toits sous les arbres jugés par le nuage LiDAR HD**, et non plus

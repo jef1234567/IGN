@@ -4,7 +4,8 @@ on:
   workflow_dispatch:
   push:
     branches: [main]
-    paths: ['cenzub/**', 'vue3d/**', '.github/workflows/cenzub.yml']
+    # Le scénario seul ne refige pas la scène : scenario.yml le republie.
+    paths: ['cenzub/**', '!cenzub/scenario.xlsx', 'vue3d/**', '.github/workflows/cenzub.yml']
 
 permissions:
   contents: write
@@ -46,6 +47,13 @@ jobs:
           mkdir -p cache
           VUE3D_CACHE=./cache VUE3D_QUOTA=1000 nohup flask --app vue3d.app run --port 8080 > serveur.log 2>&1 &
           for i in $(seq 1 30); do curl -sf http://localhost:8080/api/sante >/dev/null && break; sleep 2; done
+      - name: Scénario (cenzub/scenario.xlsx, s'il existe)
+        run: |
+          if [ -f cenzub/scenario.xlsx ]; then
+            pip install openpyxl
+            python outils/scenario.py cenzub/scenario.xlsx scenario.json
+            echo "SCENARIO=scenario.json" >> "$GITHUB_ENV"
+          fi
       - name: Construction et enregistrement de la scène
         run: CHROME=$(which google-chrome) node cenzub/figer.mjs "http://localhost:8080/${POINT}" site
       - name: Journal du serveur
