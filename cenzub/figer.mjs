@@ -63,14 +63,15 @@ if (!(await page.evaluate(() => document.getElementById('attente').hidden))) {
   throw new Error('Scène indisponible : ' + attente);
 }
 console.log('Scène affichée, attente des couches…');
-// Toits de roofer : la page les demande d'elle-même ; le bouton paraît une
-// fois le calcul fini (plusieurs minutes sur une grande zone).
+// Toits de roofer : la page les demande d'elle-même. Réponse nulle = pas de
+// nuage LiDAR HD diffusé ici ; sinon le bouton paraît une fois le calcul fini.
 console.log('Attente des toits roofer…');
-const avecRoofer = await page.waitForFunction(() => !document.getElementById('t-roofer').hidden
-    || /recharger/.test(document.getElementById('etat-roofer').textContent),
-  { timeout: 40 * 60 * 1000, polling: 3000 })
-  .then(() => page.evaluate(() => !document.getElementById('t-roofer').hidden && !document.getElementById('t-roofer').disabled),
-        () => false);
+const repRoofer = await page.waitForResponse(r => r.url().includes('/api/roofer') && r.status() === 200,
+                                             { timeout: 40 * 60 * 1000 }).catch(() => null);
+const corpsRoofer = repRoofer ? (await repRoofer.text()).slice(0, 200) : '(pas de réponse)';
+const avecRoofer = /batiments/.test(corpsRoofer) && await page.waitForFunction(
+    () => !document.getElementById('t-roofer').hidden, { timeout: 120000 }).then(() => true, () => false);
+console.log('Réponse roofer :', corpsRoofer.slice(0, 120));
 console.log('roofer :', avecRoofer ? 'calculé' : 'absent',
             await page.evaluate(() => document.getElementById('t-roofer').title));
 // Les couches à part (nuage, ouvrages, monuments, horizon) arrivent après.
@@ -90,4 +91,10 @@ fs.copyFileSync(path.join(ICI, 'servir.ps1'), path.join(sortie, 'servir.ps1'));
 fs.copyFileSync(path.join(ICI, 'LISEZMOI.txt'), path.join(sortie, 'LISEZMOI.txt'));
 fs.writeFileSync(path.join(sortie, '.nojekyll'), '');
 fs.writeFileSync(path.join(sortie, 'manifeste.json'), JSON.stringify(manifeste));
+// Diagnostic des sources de hauteur de la scène.
+for (const [cle, [f]] of Object.entries(manifeste)) if (cle.startsWith('api/scene') || cle.startsWith('api/nuage')) {
+  const txt = fs.readFileSync(path.join(sortie, 'data', f), 'utf8');
+  const sources = [...txt.matchAll(/"(source|couvert|lidar[a-z_]*)":\s*("[^"]*"|true|false|null)/g)].map(m => m[1] + '=' + m[2]);
+  console.log(cle.split('?')[0], txt.length, 'octets', [...new Set(sources)].join(' '));
+}
 console.log(`${Object.keys(manifeste).length} réponses, ${(octets / 1e6).toFixed(1)} Mo`);
