@@ -15,6 +15,13 @@ messages de commit et dans les commentaires des modules.
 
 ### Ajouté
 
+- **Éditeur de scénario sur la carte** (`editeur.html`, lien « Éditeur de
+  scénario » du panneau) : l'orthophoto de la scène en 2D, où l'on pose à
+  l'heure de la frise des fumigènes, des jalons et des unités APP-6 (ami ou
+  ennemi, arme, échelon, PC ; symboles milsymbol, MIT, embarqués pour le hors
+  réseau) avec un itinéraire horodaté. Le travail est gardé par le navigateur
+  et exporté en `scenario.json` ; « Voir en 3D » rejoue le brouillon, où les
+  unités suivent leur itinéraire (24 novembre 2026).
 - **Un camp entier hors réseau, par l'horizon** (24 novembre 2026) : le
   workflow « Camp hors réseau (horizon) » (`.github/workflows/horizon.yml`,
   lancé à la main) fige une scène détaillée, puis range dans le dossier les
@@ -25,9 +32,9 @@ messages de commit et dans les commentaires des modules.
   photo est drapée sur le relief, sans bâti ni arbres en volume.
   - `&horizon=18` descend l'horizon au zoom 18 (0,45 m par pixel à 44°),
     au lieu de 17.
-  - Volume calculé, pas encore mesuré : 88 000 tuiles sur une emprise de
-    32 × 22 km, de l'ordre de 1,8 Go à 21 Ko la tuile (moyenne mesurée à
-    Notre-Dame) ; moins sur le seul contour du camp.
+  - Mesuré sur Canjuers (contour OSM de 346 km², gardé dans
+    `zones/canjuers.geojson`) : 46 783 tuiles, 756 Mo lus en 37 min, sans
+    refus de l'IGN ; artefact zippé de 759 Mo.
   - Le calque scénario pose ses effets sur l'horizon hors de la scène, et
     `outils/scenario.py` prend `--centre` et `--rayon` au lieu de CENZUB.
 

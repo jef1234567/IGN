@@ -1,9 +1,12 @@
 // Calque scénario : un scenario.json (outils/scenario.py, depuis le tableur)
 // rejoué sur une frise. Le temps de la frise règle le soleil et les effets ;
-// cette première étape dessine les fumigènes, les autres types du format
-// (explosion, incendie, unité, nuit) sont déjà placés sur la frise.
+// elle dessine les fumigènes et les unités (symbole APP-6 qui suit son
+// itinéraire) ; les autres types du format (explosion, incendie, nuit) sont
+// déjà placés sur la frise. Le format : js/commun/scenario.js.
 //
 //   ?…&scenario=scenario.json      chemin relatif à la page
+//   ?…&scenario=brouillon          le brouillon de l'éditeur (editeur.html),
+//                                  gardé par ce navigateur
 //
 // Chaque effet est une fonction du temps de la frise, sans état : reculer,
 // sauter à un événement ou accélérer rend la même image qu'en lecture.
@@ -15,15 +18,11 @@ import { BORNES } from '../terrain/etat.js';
 import { ySolPartout } from '../terrain/horizon.js';
 import { poserSurLeRelief } from '../terrain/relief.js';
 import { etatCouche } from '../interface/etat-couche.js';
+import {
+    COULEURS_FUMEE as COULEURS, positionUnite, sidc, texteHeure, verifierScenario as verifier, CLE_BROUILLON,
+} from '../../commun/scenario.js';
 
-const FORMAT = 'scenario-cenzub';
-const VERSION = 1;
 const SOURCE = new URLSearchParams(location.search).get('scenario');
-
-const COULEURS = {
-    blanc: 0xe6e6e2, rouge: 0xd0402e, vert: 0x46a752, jaune: 0xe2c43a,
-    violet: 0x8a52c2, orange: 0xec8a2c, noir: 0x2c2c2c,
-};
 
 // --- Fumigène -----------------------------------------------------------------
 // Un rendu d'aspect, pas un modèle physique : des bouffées émises à cadence
@@ -153,7 +152,42 @@ function creerFumigene(ev, ventScenario) {
     };
 }
 
-const FABRIQUES = { fumigene: creerFumigene };
+// --- Unité ----------------------------------------------------------------------
+// Son symbole APP-6 (milsymbol, chargé par la page) en panneau toujours face à
+// la caméra, UNITE_HAUTEUR_M au-dessus du sol, à la position du moment sur
+// son itinéraire. Taille fixe à l'écran : lisible de près comme de loin.
+const UNITE_HAUTEUR_M = 12;
+const UNITE_ECRAN = 0.06;     // fraction de la hauteur de la vue
+
+function creerUnite(ev) {
+    const p = ev.params || {};
+    const toile = window.ms ? new window.ms.Symbol(p.sidc || sidc(p), { size: 60 }).asCanvas() : null;
+    if (!toile) return null;
+    const texture = new THREE.CanvasTexture(toile);
+    texture.colorSpace = THREE.SRGBColorSpace;
+    const sprite = new THREE.Sprite(new THREE.SpriteMaterial({
+        map: texture, transparent: true, depthTest: false, sizeAttenuation: false }));
+    sprite.renderOrder = 10;
+    sprite.scale.set(UNITE_ECRAN * toile.width / toile.height, UNITE_ECRAN, 1);
+    sprite.userData.infobulle = ev.libelle || p.sidc;
+    let posee = null;
+    return {
+        ev, objet: sprite, aReplacer: true,     // arrêtée hors scène, l'horizon s'affine sous elle
+        placer() { if (posee) sprite.position.y = (ySolPartout(posee.lon, posee.lat) ?? 0) + UNITE_HAUTEUR_M; },
+        maj(t) {
+            const pos = Number.isFinite(t) ? positionUnite(ev, t) : null;
+            sprite.visible = !!pos;
+            if (!pos) return;
+            posee = pos;
+            const [x, y] = toLocal(pos.lon, pos.lat);
+            sprite.position.set(x, (ySolPartout(pos.lon, pos.lat) ?? 0) + UNITE_HAUTEUR_M, -y);
+            // Pas encore entrée : en attente, pâle, à son premier point.
+            sprite.material.opacity = pos.avant ? 0.35 : 1;
+        },
+    };
+}
+
+const FABRIQUES = { fumigene: creerFumigene, unite: creerUnite };
 
 // --- Frise --------------------------------------------------------------------
 const groupe = new THREE.Group();
@@ -175,12 +209,6 @@ let effets = [];
 let temps = 0;
 let enLecture = false;
 let minuteSoleil = null;
-
-const texteHeure = s => {
-    const j = Math.floor(s / 86400), r = ((s % 86400) + 86400) % 86400;
-    return `${String(Math.floor(r / 3600)).padStart(2, '0')}:${String(Math.floor(r / 60) % 60).padStart(2, '0')}`
-        + `:${String(Math.floor(r) % 60).padStart(2, '0')}${j > 0 ? ' (J+1)' : ''}`;
-};
 
 function jourDeLAnnee(iso) {
     const [a, m, j] = iso.split('-').map(Number);
@@ -218,16 +246,10 @@ function poserReperes() {
         if (ev.fin > ev.debut) r.style.width = `${(100 * (ev.fin - ev.debut) / duree).toFixed(2)}%`;
         r.title = `${texteHeure(ev.debut).slice(0, 5)} · ${ev.type}${ev.libelle ? ' : ' + ev.libelle : ''}`
             + (FABRIQUES[ev.type] || ev.type === 'jalon' ? '' : ' (pas encore dessiné)');
+        if (ev.type === 'unite' && ev.fin > ev.debut) r.title += ` → ${texteHeure(ev.fin).slice(0, 5)}`;
         r.addEventListener('click', () => allerA(ev.debut));
         reperes.appendChild(r);
     }
-}
-
-function verifier(s) {
-    if (!s || s.format !== FORMAT) throw new Error('ce fichier n’est pas un scénario');
-    if (s.version !== VERSION) throw new Error(`version ${s.version} du format, la page lit la ${VERSION}`);
-    if (!(s.fin >= s.debut) || !Array.isArray(s.evenements)) throw new Error('scénario mal formé');
-    return s;
 }
 
 function construire() {
@@ -236,6 +258,7 @@ function construire() {
         const fab = FABRIQUES[ev.type];
         if (!fab) continue;
         const e = fab(ev, scenario.vent || { de: 270, vitesse: 3 });
+        if (!e) continue;
         e.placer();
         groupe.add(e.objet);
         effets.push(e);
@@ -246,11 +269,18 @@ function construire() {
 async function charger() {
     etatCouche('etat-scenario', 'Scénario : chargement…', true);
     try {
+        if (SOURCE === 'brouillon') {
+            let brouillon = null;
+            try { brouillon = localStorage.getItem(CLE_BROUILLON); } catch (e) { /* stockage refusé */ }
+            if (!brouillon) throw new Error('aucun brouillon dans ce navigateur');
+            scenario = verifier(JSON.parse(brouillon));
+        } else {
         const r = await fetch(SOURCE, { cache: 'no-cache' });
         // Le site figé cherche toujours son scenario.json : absent, pas de calque.
         if (r.status === 404) { etatCouche('etat-scenario', ''); return; }
         if (!r.ok) throw new Error(`HTTP ${r.status}`);
         scenario = verifier(await r.json());
+        }
     } catch (e) {
         etatCouche('etat-scenario', `Scénario illisible (${SOURCE}) : ${e.message}`);
         return;
@@ -317,6 +347,13 @@ function avancer(maintenant) {
 requestAnimationFrame(avancer);
 
 if (SOURCE) charger();
+
+// L'éditeur de scénario, sur le même point (et le même site).
+{
+    const p = new URLSearchParams(location.search);
+    p.delete('scenario');
+    document.getElementById('lien-editeur').href = `editeur.html?${p}`;
+}
 
 /** Pour les essais : l'état de la frise. */
 export const etatScenario = () => ({ scenario, temps, effets: effets.length });

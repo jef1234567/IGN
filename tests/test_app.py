@@ -120,6 +120,14 @@ def test_la_page_est_servie(client):
     assert r.status_code == 200 and b"Vue 3D IGN" in r.data
 
 
+def test_l_editeur_et_la_page_aux_noms_du_site_fige(client):
+    """L'éditeur de scénario et son bouton « Voir en 3D » visent editeur.html
+    et app.html, les noms du site figé (cenzub/figer.mjs)."""
+    assert b"Vue 3D IGN" in client.get("/app.html").data
+    r = client.get("/editeur.html")
+    assert r.status_code == 200 and "Éditeur de scénario".encode() in r.data
+
+
 def test_la_page_demande_sa_scene_avant_three_js(client):
     """Un script ordinaire, avant la carte d'import et le module : il part
     pendant que three.js arrive du CDN."""

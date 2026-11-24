@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Éditeur de scénario</title>
+<link rel="icon" href="static/favicon.svg" type="image/svg+xml">
+<link rel="stylesheet" href="static/css/editeur.css">
+</head>
+<body>
+<header>
+    <input id="titre" aria-label="Titre du scénario" placeholder="Titre du scénario">
+    <label>Date <input type="date" id="date"></label>
+    <label>Début <input id="debut" size="5" placeholder="06:00"></label>
+    <label>Fin <input id="fin" size="5" placeholder="07:00"></label>
+    <label title="Direction d'où vient le vent : 0 nord, 90 est, 270 ouest">Vent de <input type="number" id="vent-de" min="0" max="359" step="10" style="width:4.5em">°</label>
+    <label><input type="number" id="vent-vitesse" min="0" max="30" step="0.5" style="width:4em"> m/s</label>
+    <span class="espace"></span>
+    <button type="button" id="b-nouveau" title="Vider le brouillon">Nouveau</button>
+    <button type="button" id="b-publie" title="Recharger le scénario publié avec le site, à la place du brouillon">Scénario publié</button>
+    <label class="bouton" title="Ouvrir un scenario.json">Importer<input type="file" id="b-importer" accept=".json,application/json" hidden></label>
+    <button type="button" id="b-exporter" class="principal" title="Télécharger scenario.json">Exporter</button>
+    <a id="b-3d" class="bouton" title="Rejouer le brouillon dans la vue 3D">Voir en 3D</a>
+</header>
+<main>
+    <div id="carte">
+        <canvas id="toile"></canvas>
+        <div id="outils" role="toolbar" aria-label="Outils">
+            <button type="button" data-outil="selection" class="on" title="Choisir, déplacer (glisser), supprimer (Suppr)">Sélection</button>
+            <button type="button" data-outil="fumigene" title="Clic sur la carte : un fumigène à l'heure de la frise">Fumigène</button>
+            <button type="button" data-outil="unite" title="Clic sur la carte : une unité, entrée à l'heure de la frise">Unité</button>
+            <button type="button" data-outil="itineraire" title="Unité choisie : chaque clic ajoute un point de son itinéraire à l'heure de la frise" disabled>Itinéraire</button>
+            <button type="button" id="b-jalon" title="Un jalon (H, phase…) à l'heure de la frise">+ Jalon</button>
+        </div>
+        <div id="aide"></div>
+        <div id="etat" hidden></div>
+    </div>
+    <aside>
+        <section id="proprietes" hidden></section>
+        <section>
+            <h2>Événements</h2>
+            <ol id="liste"></ol>
+        </section>
+    </aside>
+</main>
+<footer id="frise">
+    <button type="button" id="frise-lecture" aria-label="Lecture">▶</button>
+    <b id="frise-heure">—</b>
+    <select id="frise-vitesse" aria-label="Vitesse de lecture">
+        <option value="1">×1</option>
+        <option value="10" selected>×10</option>
+        <option value="60">×60</option>
+    </select>
+    <button type="button" id="frise-moins" title="Une minute plus tôt">−1 min</button>
+    <button type="button" id="frise-plus" title="Une minute plus tard">+1 min</button>
+    <div class="piste">
+        <div id="frise-reperes"></div>
+        <input type="range" id="frise-curseur" min="0" max="1" step="1" value="0" aria-label="Temps du scénario">
+    </div>
+</footer>
+<script src="static/js/vendor/milsymbol.js"></script>
+<script type="module" src="static/js/editeur/main.js"></script>
+</body>
+</html>

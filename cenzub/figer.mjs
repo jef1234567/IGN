@@ -3,6 +3,7 @@
 // Ouvre la page du serveur local dans Chrome, enregistre toutes les réponses
 // reçues (API du serveur, three.js, tuiles et relief de l'IGN), puis écrit :
 //   site/app.html            la page de la scène (vue3d/static/index.html)
+//   site/editeur.html        l'éditeur de scénario (vue3d/static/editeur.html)
 //   site/static/...          ses scripts et styles
 //   site/data/<hash>         chaque réponse enregistrée
 //   site/manifeste.json      adresse demandée -> [fichier, type]
@@ -110,6 +111,7 @@ await navigateur.close();
 // La page et ses fichiers.
 fs.cpSync('vue3d/static', path.join(sortie, 'static'), { recursive: true });
 fs.copyFileSync('vue3d/static/index.html', path.join(sortie, 'app.html'));
+fs.copyFileSync('vue3d/static/editeur.html', path.join(sortie, 'editeur.html'));
 fs.copyFileSync(path.join(ICI, 'sw.js'), path.join(sortie, 'sw.js'));
 // Le calque scénario (SCENARIO : le scenario.json converti par
 // outils/scenario.py) : copié à côté de la page. La page le cherche toujours,

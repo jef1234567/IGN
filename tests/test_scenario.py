@@ -1,6 +1,7 @@
 """Conversion du tableur de scénario (outils/scenario.py) en scenario.json."""
 
 import datetime as dt
+import json
 import importlib.util
 import json
 import pathlib
@@ -96,6 +97,23 @@ def test_modele_du_depot_a_jour(tmp_path):
     scenario.ecrire_modele(chemin)
     neuf = scenario.lire_xlsx(chemin)
     assert scenario.lire_xlsx(RACINE / "cenzub" / "scenario-modele.xlsx") == neuf
+
+
+def test_json_de_l_editeur(tmp_path):
+    """Un scenario.json exporté par l'éditeur : unité et itinéraire relus tels quels."""
+    s = scenario.convertir(feuilles([("06:10", None, "fumigene", "Église", None, None, None)]))
+    s["evenements"].append({"id": "x1", "type": "unite", "debut": 21600, "fin": 22200, "libelle": "1re Cie",
+                            "lat": 49.5454, "lon": 3.9665,
+                            "params": {"camp": "ami", "sidc": "SFGPUCI----E---",
+                                       "trajet": [{"t": 21600, "lat": 49.5454, "lon": 3.9665},
+                                                  {"t": 22200, "lat": 49.546, "lon": 3.968}]}})
+    chemin = tmp_path / "scenario.json"
+    chemin.write_text(json.dumps(s), encoding="utf-8")
+    assert scenario.verifier_json(str(chemin)) == s
+    s["evenements"][-1]["params"]["trajet"][1]["lat"] = 48.85
+    chemin.write_text(json.dumps(s), encoding="utf-8")
+    with pytest.raises(scenario.ErreurScenario, match="point de 06:10"):
+        scenario.verifier_json(str(chemin))
 
 
 def test_centre_et_rayon_en_option(tmp_path, monkeypatch):
