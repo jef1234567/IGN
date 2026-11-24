@@ -1,0 +1,28 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>CENZUB – Jeoffrécourt en 3D</title>
+<style>body{font-family:system-ui,sans-serif;background:#111;color:#eee;display:grid;place-items:center;height:100vh;margin:0}</style>
+</head>
+<body>
+<div id="msg">Préparation de la scène…</div>
+<script>
+// Installe le service worker qui rejoue la scène enregistrée, puis ouvre la page.
+(async () => {
+  const msg = document.getElementById('msg');
+  if (!('serviceWorker' in navigator) || !window.isSecureContext) {
+    msg.textContent = 'Ouvrir cette page en https ou via http://localhost (voir LISEZMOI.txt).';
+    return;
+  }
+  await navigator.serviceWorker.register('sw.js');
+  await navigator.serviceWorker.ready;
+  if (!navigator.serviceWorker.controller) {
+    await new Promise(r => navigator.serviceWorker.addEventListener('controllerchange', r, { once: true }));
+  }
+  location.replace('app.html' + '__POINT__');
+})().catch(e => { document.getElementById('msg').textContent = 'Erreur : ' + e.message; });
+</script>
+</body>
+</html>

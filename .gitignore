@@ -1,0 +1,20 @@
+__pycache__/
+*.pyc
+.pytest_cache/
+.venv/
+/cache/
+# Outillage npm local (puppeteer-core pour outils/essai-navigateur.mjs) :
+# l'installation est documentée dans le README, rien de node dans le dépôt.
+node_modules/
+package.json
+package-lock.json
+# Réseaux de la couche des véhicules, exportés en local par
+# outils/exporter_vehicules.py : leurs poids ne sont jamais dans le dépôt.
+/modeles/
+# Base des panneaux solaires, préparée en local par outils/preparer_panneaux.py.
+/donnees/
+# Vidéos de la démo (outils/demo-video.mjs), trop lourdes pour le dépôt : seul
+# le GIF du README y est.
+/docs/demo/*.mp4
+# Métadonnées du Finder de macOS, dans chaque dossier ouvert.
+.DS_Store

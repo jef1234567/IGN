@@ -1,0 +1,60 @@
+name: Scène CENZUB (Jeoffrécourt)
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths: ['cenzub/**', '.github/workflows/cenzub.yml']
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: pages
+  cancel-in-progress: false
+
+env:
+  POINT: "?lat=49.5454&lon=3.9665&zone=1700"
+
+jobs:
+  construire:
+    runs-on: ubuntu-latest
+    timeout-minutes: 90
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with: { python-version: '3.12' }
+      - uses: actions/setup-node@v4
+        with: { node-version: '20' }
+      - name: Dépendances
+        run: |
+          pip install -r requirements.txt
+          npm install --no-save puppeteer-core@23
+      - name: Serveur Vue 3D
+        run: |
+          mkdir -p cache
+          VUE3D_CACHE=./cache VUE3D_QUOTA=1000 nohup flask --app vue3d.app run --port 8080 > serveur.log 2>&1 &
+          for i in $(seq 1 30); do curl -sf http://localhost:8080/api/sante >/dev/null && break; sleep 2; done
+      - name: Construction et enregistrement de la scène
+        run: CHROME=$(which google-chrome) node cenzub/figer.mjs "http://localhost:8080/${POINT}" site
+      - name: Journal du serveur
+        if: always()
+        run: tail -n 80 serveur.log
+      - uses: actions/upload-artifact@v4
+        with:
+          name: cenzub-hors-reseau
+          path: site
+      - uses: actions/upload-pages-artifact@v3
+        with: { path: site }
+
+  publier:
+    needs: construire
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deploiement.outputs.page_url }}
+    steps:
+      - id: deploiement
+        uses: actions/deploy-pages@v4

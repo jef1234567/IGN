@@ -1,0 +1,248 @@
+"""Modèle Numérique de Hauteur (MNH) LiDAR HD de l'IGN.
+
+Le MNH donne la hauteur du sursol au-dessus du terrain, en mètres : arbres,
+haies, mais aussi bâtiments et tout ce qui dépasse. C'est la seule source
+ouverte qui chiffre la hauteur de la végétation — la couche vectorielle
+`BDTOPO_V3:zone_de_vegetation` ne porte que la nature (Haie, Bois, Forêt…) et
+la géométrie, jamais de hauteur (vérifié via DescribeFeatureType).
+
+Deux particularités du service, toutes deux constatées contre le service
+réel :
+
+1. `GetFeatureInfo` est refusé sur cette couche (`LayerNotQueryable`). Le seul
+   moyen d'obtenir des valeurs et non des pixels colorés est un `GetMap` au
+   format `image/x-bil;bits=32`, qui renvoie les hauteurs brutes en float32
+   little-endian, ligne par ligne depuis le nord-ouest.
+2. En WMS 1.3.0 et EPSG:4326, la BBOX s'écrit `lat,lon` — l'ordre inverse de
+   celui des requêtes WFS voisines. Passée en `lon,lat`, la réponse est une
+   dalle vide, sans erreur.
+
+Couverture : le LiDAR HD est un programme en cours de déploiement. Mesuré sur
+un échantillon de 60 bâtiments tirés au hasard en France, 77 % des points
+sont couverts ; les trous observés se concentrent sur le Nord et la Bretagne.
+D'où `couvert` dans la réponse, pour que l'appelant distingue « pas de
+végétation » de « pas de donnée ».
+"""
+
+import math
+import struct
+
+import logging
+
+import numpy as np
+import requests
+
+from .geopf import en_parallele, get_avec_reprise, place
+
+MNH_LAYER = "IGNF_LIDAR-HD_MNH_ELEVATION.ELEVATIONGRIDCOVERAGE.WGS84G"
+# Repli hors couverture LiDAR HD : modèle numérique de surface photogrammétrique
+# moins modèle de terrain, tous deux nationaux. Moins fin que le LiDAR — il
+# lisse les pics (mesuré : 7,6 m contre 8,8 m sur le même arbre) — mais là où le
+# LiDAR renvoie -9999, il donne des hauteurs plausibles (11,6 m sur une zone urbaine du Nord).
+MNS_LAYER = "ELEVATION.ELEVATIONGRIDCOVERAGE.HIGHRES.MNS"
+MNT_LAYER = "ELEVATION.ELEVATIONGRIDCOVERAGE.HIGHRES"
+# Le terrain dont le MNH LiDAR est tiré : MNS = MNT + MNH, vérifié à 1 cm près
+# en médiane sous une maison.
+MNT_LIDAR_LAYER = "IGNF_LIDAR-HD_MNT_ELEVATION.ELEVATIONGRIDCOVERAGE.WGS84G"
+
+# Résolution par défaut : 2 m. À 1 m la grille quadruple pour un gain nul à
+# l'écran (les volumes sont déjà rendus en pavés), et la réponse JSON dépasse
+# le demi-mégaoctet.
+MNH_RESOLUTION_M = 2.0
+# Garde-fou : une grille plus fine ne passerait pas confortablement dans la
+# page.
+MNH_MAX_PIXELS = 512
+# Côté maximal d'une image du WMS : le service refuse au-delà. Une grille plus
+# grande se lit en tuiles (`_grille_wms`).
+WMS_PIXELS_MAX = 2048
+# En deçà, c'est du sol, du mobilier urbain ou du bruit de mesure : inutile de
+# le transporter jusqu'au navigateur.
+MNH_SEUIL_M = 2.0
+
+
+def _grille_depuis_bil(contenu, largeur, hauteur):
+    """Décode le BIL32 en liste de hauteurs, nettoyée des valeurs aberrantes."""
+    attendu = largeur * hauteur * 4
+    if len(contenu) < attendu:
+        raise ValueError(f"BIL tronqué : {len(contenu)} octets pour {attendu} attendus")
+    brut = np.frombuffer(contenu, dtype="<f4", count=largeur * hauteur).astype(np.float64)
+    # Le service signale l'absence de donnée par de grandes valeurs négatives ;
+    # les négatifs résiduels sont du bruit autour de zéro (NaN compris).
+    with np.errstate(invalid="ignore"):
+        hors = ~((brut >= 0) & (brut <= 200))
+    # round(v, 1) de Python, à l'identique : un float32 fois 10 est exact en
+    # float64 (24 + 4 bits), rint arrondit ce produit exact au pair le plus
+    # proche comme round(), et la division rend le double le plus proche de
+    # k / 10 comme lui. Vérifié sur les 1 128 792 065 float32 de [0, 200], et
+    # −0 : aucun écart. 0,05 s au lieu de 0,4 à 0,7 s pour la grille d'une
+    # zone de 1 000 m (2,9 millions de cellules) : du temps pris à l'arrivée
+    # d'une des plus longues lectures, et au verrou global de Python, que les
+    # lectures parallèles se partagent.
+    return np.where(hors, 0.0, np.rint(brut * 10.0) / 10.0).tolist()
+
+
+def tuiles_wms(largeur, hauteur, cote_max):
+    """(x0, y0, largeur, hauteur) des tuiles d'au plus `cote_max` pixels de
+    côté qui pavent une image, lignes depuis le nord-ouest."""
+    return [(x0, y0, min(cote_max, largeur - x0), min(cote_max, hauteur - y0))
+            for y0 in range(0, hauteur, cote_max) for x0 in range(0, largeur, cote_max)]
+
+
+def bbox_tuile(west, south, east, north, largeur, hauteur, tuile):
+    """Emprise (ouest, sud, est, nord) d'une tuile de `tuiles_wms`. En
+    EPSG:4326, pixels et degrés sont proportionnels : la tuile est la portion
+    exacte de l'emprise qui correspond à ses pixels."""
+    x0, y0, l, h = tuile
+    dlon, dlat = (east - west) / largeur, (north - south) / hauteur
+    return west + x0 * dlon, north - (y0 + h) * dlat, west + (x0 + l) * dlon, north - y0 * dlat
+
+
+def _grille_wms(layer, west, south, east, north, largeur, hauteur, brut=False):
+    """GetMap BIL32 sur une couche altimétrique, décodé en liste de floats.
+
+    brut=True conserve les valeurs telles quelles (altitudes, nodata négatif) :
+    c'est l'appelant qui soustrait MNS et MNT avant de nettoyer.
+
+    Au-delà de WMS_PIXELS_MAX de côté, la grille est lue en tuiles, ensemble,
+    et réassemblée ; en deçà, c'est la requête unique d'avant, à l'octet près.
+    """
+    if largeur > WMS_PIXELS_MAX or hauteur > WMS_PIXELS_MAX:
+        return _grille_wms_en_tuiles(layer, west, south, east, north, largeur, hauteur, brut)
+    contenu = _bil_wms(layer, west, south, east, north, largeur, hauteur)
+    if brut:
+        attendu = largeur * hauteur * 4
+        if len(contenu) < attendu:
+            raise requests.RequestException(f"BIL tronqué sur {layer}")
+        return list(struct.unpack(f"<{largeur * hauteur}f", contenu[:attendu]))
+    return _grille_depuis_bil(contenu, largeur, hauteur)
+
+
+def _grille_wms_en_tuiles(layer, west, south, east, north, largeur, hauteur, brut):
+    """`_grille_wms` d'une grille trop grande pour une requête : chaque
+    cellule a la valeur qu'une requête unique lui donnerait (le nettoyage de
+    `_grille_depuis_bil` et la conversion de struct se font cellule par
+    cellule), seul le découpage des requêtes change."""
+    tuiles = tuiles_wms(largeur, hauteur, WMS_PIXELS_MAX)
+    # Les tuiles forment un groupe (en_parallele) : une illisible rend la
+    # grille fausse, et les autres ne partent plus.
+    contenus = en_parallele(*(
+        lambda t=t: _bil_wms(layer, *bbox_tuile(west, south, east, north, largeur, hauteur, t),
+                             t[2], t[3])
+        for t in tuiles))
+    f4 = np.empty((hauteur, largeur), dtype="<f4")
+    for (x0, y0, l, h), contenu in zip(tuiles, contenus):
+        if len(contenu) < l * h * 4:
+            raise requests.RequestException(f"BIL tronqué sur {layer}")
+        f4[y0:y0 + h, x0:x0 + l] = np.frombuffer(contenu, dtype="<f4", count=l * h).reshape(h, l)
+    if brut:
+        return f4.astype(np.float64).ravel().tolist()
+    return _grille_depuis_bil(f4.tobytes(), largeur, hauteur)
+
+
+def _bil_wms(layer, west, south, east, north, largeur, hauteur):
+    """Octets BIL32 d'un GetMap, d'au plus WMS_PIXELS_MAX de côté."""
+    # WMS 1.3.0 + EPSG:4326 => BBOX en lat,lon.
+    url = (
+        "https://data.geopf.fr/wms-r/wms?SERVICE=WMS&VERSION=1.3.0&REQUEST=GetMap"
+        f"&LAYERS={layer}&STYLES=&CRS=EPSG:4326"
+        f"&BBOX={south},{west},{north},{east}"
+        f"&WIDTH={largeur}&HEIGHT={hauteur}"
+        "&FORMAT=image/x-bil;bits=32"
+    )
+    with place():
+        reponse = get_avec_reprise(url)
+    reponse.raise_for_status()
+    if "bil" not in reponse.headers.get("Content-Type", ""):
+        # Le service répond en XML quand il refuse la requête.
+        raise requests.RequestException(
+            f"Réponse {layer} inattendue ({reponse.headers.get('Content-Type')}): "
+            f"{reponse.text[:200]}")
+    return reponse.content
+
+
+journal = logging.getLogger(__name__)
+
+
+def fetch_sol_grid(west, south, east, north, largeur, hauteur, source):
+    """Terrain sous la grille MNH, cellule pour cellule, en altitudes.
+
+    Le terrain de la même source que le MNH : celui du LiDAR HD, ou le RGE ALTI
+    pour le repli MNS − MNT. Une hauteur de sursol n'a de sens qu'au-dessus du
+    sol dont on l'a soustraite.
+
+    Returns:
+        liste de largeur × hauteur altitudes, lignes depuis le nord-ouest ;
+        NaN là où le service n'a pas de donnée.
+    """
+    layer = MNT_LIDAR_LAYER if source == "lidar_hd" else MNT_LAYER
+    valeurs = _grille_wms(layer, west, south, east, north, largeur, hauteur, brut=True)
+    return [v if v > -1000 else float("nan") for v in valeurs]
+
+
+def dimensions_grille(west, south, east, north, resolution_m=MNH_RESOLUTION_M,
+                      max_pixels=MNH_MAX_PIXELS):
+    """(largeur, hauteur) en pixels de la grille MNH d'une emprise.
+
+    Elles ne dépendent que de l'emprise : la scène les calcule avant d'avoir
+    la grille, pour demander l'orthophoto et le terrain à la même taille en
+    même temps qu'elle.
+    """
+    west, south = float(west), float(south)
+    east, north = float(east), float(north)
+    # Pas de grille en degrés, déduit de la résolution voulue au centre.
+    lat_moy = (south + north) / 2
+    m_par_deg_lon = 111320 * math.cos(math.radians(lat_moy))
+    # max_pixels : 512 pour la végétation (payload navigateur) ; les toits
+    # demandent 0,5 m et restent côté serveur, donc jusqu'à
+    # scene.GRILLE_PIXELS_MAX, lue en tuiles au-delà du plafond du WMS.
+    largeur = int(min(max((east - west) * m_par_deg_lon / resolution_m, 8), max_pixels))
+    hauteur = int(min(max((north - south) * 110540 / resolution_m, 8), max_pixels))
+    return largeur, hauteur
+
+
+def fetch_mnh_grid(west, south, east, north, resolution_m=MNH_RESOLUTION_M,
+                   max_pixels=MNH_MAX_PIXELS):
+    """Grille de hauteurs du sursol sur une emprise WGS84.
+
+    Returns:
+        dict: width, height, bbox, resolution_m, couvert, values (m, pas de pas
+        de grille constant en degrés). `values` est ordonné par lignes depuis
+        le nord-ouest, comme l'image source.
+    """
+    west, south = float(west), float(south)
+    east, north = float(east), float(north)
+    largeur, hauteur = dimensions_grille(west, south, east, north, resolution_m, max_pixels)
+
+    valeurs = _grille_wms(MNH_LAYER, west, south, east, north, largeur, hauteur)
+    source = "lidar_hd"
+    # Une dalle hors couverture LiDAR revient entièrement à zéro (nodata). Le
+    # seuil évite de confondre ce cas avec une emprise réellement rase.
+    if max(valeurs) <= 0.5:
+        try:
+            # Deux grilles indépendantes, de la taille du MNH : lues ensemble.
+            mns, mnt = en_parallele(
+                lambda: _grille_wms(MNS_LAYER, west, south, east, north, largeur, hauteur, brut=True),
+                lambda: _grille_wms(MNT_LAYER, west, south, east, north, largeur, hauteur, brut=True))
+            repli = [round(min(max(a - b, 0.0), 200.0), 1) if (a > -1000 and b > -1000) else 0.0
+                     for a, b in zip(mns, mnt)]
+            if max(repli) > 0.5:
+                valeurs, source = repli, "mns_mnt"
+        except requests.RequestException as exc:
+            # Le repli est un bonus : son échec ne doit pas faire perdre la
+            # réponse LiDAR, même vide.
+            journal.warning("Repli MNS-MNT indisponible: %s", exc)
+
+    couvert = max(valeurs) > 0.5
+    data = {
+        "width": largeur,
+        "height": hauteur,
+        "bbox": [west, south, east, north],
+        "resolution_m": resolution_m,
+        "couvert": couvert,
+        # lidar_hd : hauteurs mesurées. mns_mnt : estimées par photogrammétrie,
+        # à afficher comme telles.
+        "source": source if couvert else None,
+        "seuil_m": MNH_SEUIL_M,
+        "values": valeurs,
+    }
+    return data
