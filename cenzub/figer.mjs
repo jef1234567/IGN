@@ -78,6 +78,17 @@ console.log('roofer :', avecRoofer ? 'calculé' : 'absent',
 // Les couches à part (nuage, ouvrages, monuments, horizon) arrivent après.
 await page.waitForNetworkIdle({ idleTime: 15000, timeout: 20 * 60 * 1000 }).catch(() => {});
 await new Promise(r => setTimeout(r, 10000));
+// Couches OpenStreetMap (Overpass souvent saturé) : redemandées jusqu'à réussite.
+const requete = new URL(url).search.slice(1);
+for (const couche of ['monuments', 'eoliennes', 'ortho']) {
+  const cle = `api/${couche}?${requete}`;
+  for (let essai = 1; essai <= 6 && !manifeste[cle]; essai++) {
+    console.log(`${couche} : nouvel essai ${essai}`);
+    await page.evaluate(c => fetch(c).then(r => r.blob()).catch(() => {}), cle);
+    await new Promise(r => setTimeout(r, 20000));
+  }
+  console.log(cle, manifeste[cle] ? 'enregistrée' : 'ABSENTE');
+}
 await page.screenshot({ path: path.join(sortie, 'apercu.png') });
 await navigateur.close();
 

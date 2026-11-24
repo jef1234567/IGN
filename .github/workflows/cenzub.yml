@@ -39,7 +39,7 @@ jobs:
           VUE3D_ROOFER: docker
           VUE3D_ROOFER_ZONE_MAX: "2000"
           VUE3D_ROOFER_DELAI: "2400"
-          VUE3D_ORTHO_PX_PAR_KM: "4000"
+          VUE3D_ORTHO_PX_PAR_KM: "2400"
           VUE3D_RELIEF_POINTS_PAR_KM: "1024"
         run: |
           mkdir -p cache
