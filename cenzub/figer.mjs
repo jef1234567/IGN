@@ -38,6 +38,11 @@ const navigateur = await puppeteer.launch({
 const page = await navigateur.newPage();
 await page.setViewport({ width: 1400, height: 850 });
 page.on('console', m => { if (m.type() === 'error') console.log('[page]', m.text()); });
+// Chrome ne garde par défaut que 10 Mo du corps d'une réponse : au-delà,
+// reponse.buffer() échoue. La scène de CENZUB (1 700 m) en fait 8,9 ; celle
+// de 2 000 m au centre de Canjuers, plus, et elle manquait au dossier figé
+// (24 novembre 2026 : « Scène indisponible, HTTP 404 » hors réseau).
+await page._client().send('Network.enable', { maxResourceBufferSize: 500e6, maxTotalBufferSize: 2e9 });
 
 page.on('response', async reponse => {
   const req = reponse.request();
@@ -47,7 +52,10 @@ page.on('response', async reponse => {
   if (u.startsWith(base) && !u.startsWith(base + 'api/')) return;
   if (u.startsWith('data:') || u.startsWith('blob:')) return;
   let corps;
-  try { corps = await reponse.buffer(); } catch { return; }
+  try { corps = await reponse.buffer(); } catch (e) {
+    if (u.includes('/api/')) console.log('Réponse perdue :', u, e.message);
+    return;
+  }
   const type = reponse.headers()['content-type'] || 'application/octet-stream';
   const fichier = crypto.createHash('sha1').update(corps).digest('hex');
   fs.writeFileSync(path.join(sortie, 'data', fichier), corps);
@@ -119,6 +127,10 @@ fs.copyFileSync(path.join(ICI, 'servir.ps1'), path.join(sortie, 'servir.ps1'));
 fs.copyFileSync(path.join(ICI, 'LISEZMOI.txt'), path.join(sortie, 'LISEZMOI.txt'));
 fs.writeFileSync(path.join(sortie, '.nojekyll'), '');
 fs.writeFileSync(path.join(sortie, 'manifeste.json'), JSON.stringify(manifeste));
+// Sans sa scène, le dossier ne s'ouvre pas : mieux vaut échouer ici.
+if (!Object.keys(manifeste).some(c => c.startsWith('api/scene?'))) {
+  throw new Error('La scène (api/scene) n\'a pas été enregistrée');
+}
 // Diagnostic des sources de hauteur de la scène.
 for (const [cle, [f]] of Object.entries(manifeste)) if (cle.startsWith('api/scene') || cle.startsWith('api/nuage')) {
   const txt = fs.readFileSync(path.join(sortie, 'data', f), 'utf8');

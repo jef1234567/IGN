@@ -23,11 +23,26 @@ await page.setViewport({ width: 1400, height: 850 });
 const erreurs = [];
 page.on('console', m => { if (m.type() === 'error') erreurs.push(m.text()); });
 await page.goto(url, { waitUntil: 'domcontentloaded', timeout: 120000 });
-await page.waitForFunction(() => location.pathname.endsWith('app.html')
-  && document.getElementById('attente') && document.getElementById('attente').hidden,
-  { timeout: 10 * 60 * 1000, polling: 1000 });
+// Le cartouche d'attente est caché avant la demande de la scène : on attend
+// donc les bâtiments ou le relief de la scène, puis on vérifie qu'aucune
+// indisponibilité ne s'affiche (premier essai : « HTTP 404 » passé inaperçu).
+await page.waitForFunction(() => location.pathname.endsWith('app.html'), { timeout: 120000 });
+let attente = '', cache = 0;
+for (let t = 0; t < 10 * 60 && cache < 30 && !/indisponible/.test(attente); t += 2) {
+  await new Promise(r => setTimeout(r, 2000));
+  attente = await page.evaluate(() => {
+    const a = document.getElementById('attente');
+    return a && !a.hidden ? a.textContent : '';
+  });
+  cache = attente ? 0 : cache + 2;
+}
+if (attente) {
+  await page.screenshot({ path: capture });
+  await navigateur.close();
+  console.log('Scène pas affichée hors réseau :', attente);
+  process.exit(1);
+}
 console.log('Scène affichée hors réseau');
-await new Promise(r => setTimeout(r, 30000));
 
 // Une tuile de chaque sorte au bord du camp, loin de la scène.
 const [o, s] = zone.zone.type === 'Polygon' ? zone.zone.coordinates[0][0] : zone.zone.coordinates[0][0][0];
