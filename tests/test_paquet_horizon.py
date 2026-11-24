@@ -106,3 +106,26 @@ def test_altitudes_tronquees_refusees(tmp_path, monkeypatch):
     monkeypatch.setattr(ph, "lire", lambda s, url, sig, essais=6: b"\xff\xd8" if sig else b"court")
     with pytest.raises(RuntimeError):
         ph.telecharger(box(6.44, 43.70, 6.441, 43.701), str(tmp_path), zoom_max=9, fils=1)
+
+
+def test_overpass_passe_au_miroir_suivant(monkeypatch):
+    appels = []
+
+    class Reponse:
+        def __init__(self, ok):
+            self.ok = ok
+
+        def raise_for_status(self):
+            if not self.ok:
+                raise ph.requests.HTTPError("502")
+
+        def json(self):
+            return {"elements": [{"type": "way", "tags": {"name": "Camp"}, "geometry": [
+                {"lon": a, "lat": b} for a, b in [(0, 0), (1, 0), (1, 1), (0, 0)]]}]}
+
+    def post(url, **kw):
+        appels.append(url)
+        return Reponse(len(appels) > 1)
+    monkeypatch.setattr(ph.requests, "post", post)
+    zone, nom = ph.zone_osm("Camp", urls=("a", "b"))
+    assert nom == "Camp" and appels == ["a", "b"]

@@ -57,21 +57,34 @@ URL_ORTHO = ("https://data.geopf.fr/wmts?SERVICE=WMTS&REQUEST=GetTile&VERSION=1.
 URL_ALTI = ("https://data.geopf.fr/wmts?SERVICE=WMTS&REQUEST=GetTile&VERSION=1.0.0"
             "&LAYER=ELEVATION.ELEVATIONGRIDCOVERAGE.HIGHRES&STYLE=normal&FORMAT=image/x-bil;bits=32"
             "&TILEMATRIXSET=WGS84G_6_14&TILEMATRIX={n}&TILEROW={r}&TILECOL={c}")
-URL_OVERPASS = "https://overpass-api.de/api/interpreter"
+# Overpass répond souvent 502 ou 504 aux heures chargées : on passe au miroir suivant.
+URLS_OVERPASS = ("https://overpass-api.de/api/interpreter",
+                 "https://overpass.kumi.systems/api/interpreter",
+                 "https://overpass.private.coffee/api/interpreter")
 FILS = 12                    # HORIZON_PARALLELE
 ENTETES = {"User-Agent": "vue3d-paquet-horizon"}
 
 
 # --- Zone ----------------------------------------------------------------------
 
-def zone_osm(nom, url=URL_OVERPASS):
+def zone_osm(nom, urls=URLS_OVERPASS, tours=3):
     """Contour du plus grand terrain militaire OSM dont le nom contient `nom`."""
     requete = (f'[out:json][timeout:120];(way["landuse"="military"]["name"~"{nom}",i];'
                f'relation["landuse"="military"]["name"~"{nom}",i];'
                f'way["military"]["name"~"{nom}",i];relation["military"]["name"~"{nom}",i];);out geom;')
-    r = requests.post(url, data={"data": requete}, headers=ENTETES, timeout=180)
-    r.raise_for_status()
-    return plus_grand(r.json()["elements"])
+    erreurs = []
+    for tour in range(tours):
+        for url in urls:
+            try:
+                r = requests.post(url, data={"data": requete}, headers=ENTETES, timeout=180)
+                r.raise_for_status()
+                return plus_grand(r.json()["elements"])
+            except (requests.RequestException, ValueError, KeyError) as e:
+                if isinstance(e, ValueError) and str(e).startswith("aucun"):
+                    raise
+                erreurs.append(f"{url} : {e}")
+        time.sleep(30 * (tour + 1))
+    raise RuntimeError("Overpass indisponible :\n" + "\n".join(erreurs))
 
 
 def plus_grand(elements):

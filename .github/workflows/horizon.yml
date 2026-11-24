@@ -60,11 +60,8 @@ jobs:
             echo "ZONE=$EMPRISE" >> "$GITHUB_ENV"
             CENTRE=$(python -c "import sys; o,s,e,n=map(float,sys.argv[1].split(',')); print(f'{(s+n)/2:.5f},{(o+e)/2:.5f}')" "$EMPRISE")
           else
-            for essai in 1 2 3 4; do
-              python outils/paquet_horizon.py zone --osm "$CAMP" zone.geojson | tee zone.txt && break
-              sleep 60
-            done
-            test -s zone.geojson
+            python outils/paquet_horizon.py zone --osm "$CAMP" zone.geojson > zone.txt
+            cat zone.txt
             echo "ZONE=zone.geojson" >> "$GITHUB_ENV"
             CENTRE=$(sed -n 's/^CENTRE=//p' zone.txt)
           fi
