@@ -80,8 +80,9 @@ def zone_osm(nom, urls=URLS_OVERPASS, tours=3):
                 r.raise_for_status()
                 return plus_grand(r.json()["elements"])
             except (requests.RequestException, ValueError, KeyError) as e:
-                if isinstance(e, ValueError) and str(e).startswith("aucun"):
-                    raise
+                # Une réponse vide n'est pas une preuve d'absence : le 24
+                # novembre 2026, un miroir a rendu 0 élément pour Canjuers,
+                # trouvé (346 km²) une heure plus tôt. On demande au suivant.
                 erreurs.append(f"{url} : {e}")
         time.sleep(30 * (tour + 1))
     raise RuntimeError("Overpass indisponible :\n" + "\n".join(erreurs))

@@ -129,3 +129,16 @@ def test_overpass_passe_au_miroir_suivant(monkeypatch):
     monkeypatch.setattr(ph.requests, "post", post)
     zone, nom = ph.zone_osm("Camp", urls=("a", "b"))
     assert nom == "Camp" and appels == ["a", "b"]
+
+
+def test_overpass_vide_demande_au_miroir_suivant(monkeypatch):
+    class Vide:
+        def raise_for_status(self):
+            pass
+
+        def json(self):
+            return {"elements": []}
+    monkeypatch.setattr(ph.requests, "post", lambda url, **kw: Vide())
+    monkeypatch.setattr(ph.time, "sleep", lambda s: None)
+    with pytest.raises(RuntimeError, match="aucun terrain"):
+        ph.zone_osm("Camp", urls=("a", "b"), tours=2)
