@@ -23,8 +23,10 @@ messages de commit et dans les commentaires des modules.
   sauter) règle le soleil sur la date et l'heure du scénario et rejoue les
   fumigènes (couleur, taille, vent). Les types explosion, incendie, unité et
   nuit sont déjà du format et passent sur la frise ; leur rendu viendra. Le
-  workflow CENZUB convertit `cenzub/scenario.xlsx` s'il existe et l'ouvre
-  d'emblée sur le site figé (24 novembre 2026).
+  site figé cherche toujours son `scenario.json` : changer de scénario ne
+  refige pas la scène. Le workflow `scenario.yml` republie le dernier site
+  construit avec le tableur converti, et hors réseau il suffit de remplacer
+  le fichier (24 novembre 2026).
 
 ### Changé
 

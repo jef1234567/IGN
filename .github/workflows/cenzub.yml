@@ -4,7 +4,8 @@ on:
   workflow_dispatch:
   push:
     branches: [main]
-    paths: ['cenzub/**', 'vue3d/**', '.github/workflows/cenzub.yml']
+    # Le scénario seul ne refige pas la scène : scenario.yml le republie.
+    paths: ['cenzub/**', '!cenzub/scenario.xlsx', 'vue3d/**', '.github/workflows/cenzub.yml']
 
 permissions:
   contents: write

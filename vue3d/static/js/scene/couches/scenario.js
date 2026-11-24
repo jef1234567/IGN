@@ -240,6 +240,8 @@ async function charger() {
     etatCouche('etat-scenario', 'Scénario : chargement…', true);
     try {
         const r = await fetch(SOURCE, { cache: 'no-cache' });
+        // Le site figé cherche toujours son scenario.json : absent, pas de calque.
+        if (r.status === 404) { etatCouche('etat-scenario', ''); return; }
         if (!r.ok) throw new Error(`HTTP ${r.status}`);
         scenario = verifier(await r.json());
     } catch (e) {

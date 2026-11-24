@@ -9,7 +9,7 @@ Ce dépôt reprend [Vue 3D IGN](https://github.com/ysimonx/vue-3d-ign) de Yannic
 
 1. Copier `cenzub/scenario-modele.xlsx` en `cenzub/scenario.xlsx` et le remplir : feuille **Scénario** (titre, date, heures de début et de fin, vent), feuille **Points** (lieux nommés), feuille **Événements** (une ligne par événement : début, fin, type `fumigene` ou `jalon`, lieu, libellé, couleur, taille, vent propre facultatif).
 2. Vérifier : `pip install openpyxl && python outils/scenario.py cenzub/scenario.xlsx scenario.json` (chaque ligne fautive est listée).
-3. Pousser sur `main` : le workflow convertit le tableur et le site s'ouvre sur la frise. En local : `?…&scenario=chemin/scenario.json`.
+3. Pousser sur `main` : `scenario.yml` convertit le tableur et republie en quelques minutes le site déjà figé, sans reconstruire la scène. Hors réseau : remplacer `scenario.json` dans le dossier du site. En local : `?…&scenario=chemin/scenario.json`.
 
 Une heure plus tôt que le début est celle du lendemain (exercice de nuit). Une colonne inconnue est gardée telle quelle dans le JSON, pour les types à venir (explosion, incendie, unité avec symbole OTAN, nuit).
 
