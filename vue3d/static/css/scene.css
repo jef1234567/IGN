@@ -379,3 +379,25 @@ html.tiroir #avis { bottom:calc(20px + var(--credits-h, 0px)); }
     #avis .pouces button { height:40px; padding:0 14px; }
     #avis-mot textarea { font-size:16px; }
 }
+
+/* Frise du calque scénario (couches/scenario.js) : au-dessus des avis et des
+   crédits, au milieu du bas de la vue. */
+#frise { position:absolute; left:50%; bottom:64px; transform:translateX(-50%); z-index:3;
+         width:min(720px, calc(100% - 24px)); box-sizing:border-box; padding:8px 12px;
+         background:rgba(31,35,40,.9); border:1px solid var(--line); border-radius:6px;
+         color:#e8eaed; font-size:12px; }
+#frise[hidden] { display:none; }
+#frise .ligne { display:flex; align-items:center; gap:10px; margin-bottom:6px; }
+#frise button#frise-lecture { width:28px; height:24px; border:1px solid var(--line); border-radius:4px;
+                              background:none; color:inherit; cursor:pointer; font-size:11px; }
+#frise select { background:#1f2328; color:inherit; border:1px solid var(--line); border-radius:4px; }
+#frise-heure { font-variant-numeric:tabular-nums; }
+#frise-titre { color:var(--muted); overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+#frise .piste { position:relative; }
+#frise-curseur { width:100%; margin:0; }
+#frise-reperes { position:relative; height:10px; margin-bottom:2px; }
+#frise .repere { position:absolute; top:0; min-width:4px; height:10px; margin-left:-2px; padding:0;
+                 border:0; border-radius:2px; background:#8b949e; opacity:.6; cursor:pointer; }
+#frise .repere.fumigene { background:#cfd6dd; }
+#frise .repere.jalon { width:3px; background:var(--accent); }
+#frise .repere.passe { opacity:1; }
