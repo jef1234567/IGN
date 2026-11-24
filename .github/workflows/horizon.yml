@@ -60,10 +60,24 @@ jobs:
             echo "ZONE=$EMPRISE" >> "$GITHUB_ENV"
             CENTRE=$(python -c "import sys; o,s,e,n=map(float,sys.argv[1].split(',')); print(f'{(s+n)/2:.5f},{(o+e)/2:.5f}')" "$EMPRISE")
           else
-            python outils/paquet_horizon.py zone --osm "$CAMP" zone.geojson > zone.txt
-            cat zone.txt
+            # Le contour gardé dans le dépôt passe avant Overpass, souvent
+            # saturé (trois miroirs sans réponse le 24 novembre 2026, 15 h).
+            GARDE="zones/$(echo "$CAMP" | tr '[:upper:]' '[:lower:]').geojson"
+            if [ -f "$GARDE" ]; then
+              cp "$GARDE" zone.geojson
+              CENTRE=$(python -c "import json,sys; from shapely.geometry import shape; c=shape(json.load(open(sys.argv[1]))['geometry']).centroid; print(f'{c.y:.5f},{c.x:.5f}')" zone.geojson)
+              echo "Contour gardé : $GARDE"
+            else
+              python outils/paquet_horizon.py zone --osm "$CAMP" zone.geojson > zone.txt
+              cat zone.txt
+              CENTRE=$(sed -n 's/^CENTRE=//p' zone.txt)
+              # Pour le garder dans le dépôt : branche zones-horizon.
+              mkdir -p /tmp/z && cp zone.geojson "/tmp/z/$(basename "$GARDE")" && cd /tmp/z && git init -q -b zones-horizon
+              git add . && git -c user.name=ci -c user.email=ci@localhost commit -q -m "contour $CAMP"
+              git push -qf "https://x-access-token:${{ github.token }}@github.com/${{ github.repository }}" zones-horizon
+              cd "$GITHUB_WORKSPACE"
+            fi
             echo "ZONE=zone.geojson" >> "$GITHUB_ENV"
-            CENTRE=$(sed -n 's/^CENTRE=//p' zone.txt)
           fi
           echo "CENTRE=$CENTRE" >> "$GITHUB_ENV"
           if [ -n "$POINT_SAISI" ]; then echo "POINT=$POINT_SAISI" >> "$GITHUB_ENV"

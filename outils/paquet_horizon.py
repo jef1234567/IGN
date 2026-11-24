@@ -67,7 +67,7 @@ ENTETES = {"User-Agent": "vue3d-paquet-horizon"}
 
 # --- Zone ----------------------------------------------------------------------
 
-def zone_osm(nom, urls=URLS_OVERPASS, tours=3):
+def zone_osm(nom, urls=URLS_OVERPASS, tours=4):
     """Contour du plus grand terrain militaire OSM dont le nom contient `nom`."""
     requete = (f'[out:json][timeout:120];(way["landuse"="military"]["name"~"{nom}",i];'
                f'relation["landuse"="military"]["name"~"{nom}",i];'
