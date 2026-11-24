@@ -24,6 +24,7 @@ fs.rmSync(sortie, { recursive: true, force: true });
 fs.mkdirSync(path.join(sortie, 'data'), { recursive: true });
 
 const manifeste = {};
+let corpsRoofer = null;
 let octets = 0;
 const cleDe = u => (u.startsWith(base) ? u.slice(base.length) : u).split('#')[0];
 
@@ -51,6 +52,7 @@ page.on('response', async reponse => {
   octets += corps.length;
   // Une redirection (tuile du serveur renvoyée vers l'IGN) répond aux deux adresses.
   for (const r of [...req.redirectChain(), req]) manifeste[cleDe(r.url())] = [fichier, type];
+  if (u.includes('/api/roofer')) corpsRoofer = corps.toString('utf8', 0, 200);
 });
 
 console.log('Ouverture de', url);
@@ -66,9 +68,8 @@ console.log('Scène affichée, attente des couches…');
 // Toits de roofer : la page les demande d'elle-même. Réponse nulle = pas de
 // nuage LiDAR HD diffusé ici ; sinon le bouton paraît une fois le calcul fini.
 console.log('Attente des toits roofer…');
-const repRoofer = await page.waitForResponse(r => r.url().includes('/api/roofer') && r.status() === 200,
-                                             { timeout: 40 * 60 * 1000 }).catch(() => null);
-const corpsRoofer = repRoofer ? (await repRoofer.text()).slice(0, 200) : '(pas de réponse)';
+for (let s = 0; s < 40 * 60 && corpsRoofer === null; s += 3) await new Promise(r => setTimeout(r, 3000));
+corpsRoofer ??= '(pas de réponse)';
 const avecRoofer = /batiments/.test(corpsRoofer) && await page.waitForFunction(
     () => !document.getElementById('t-roofer').hidden, { timeout: 120000 }).then(() => true, () => false);
 console.log('Réponse roofer :', corpsRoofer.slice(0, 120));
