@@ -149,6 +149,8 @@ SCENE_ARRONDI = 4
 # construction et le poids de la scène croissent comme la surface : ×8 à
 # 1 000 m, ×32 à 2 000 m.
 ZONE_PAS_M = 50
+# Pixels d'orthophoto par kilomètre de zone (2 048 d'origine ; 4 000 = 25 cm).
+ORTHO_PX_PAR_KM = int(os.environ.get("VUE3D_ORTHO_PX_PAR_KM", "2048"))
 ZONE_MIN_M = 150
 ZONE_MAX_M = 2000
 # Côté nord-sud de l'emprise par défaut, en mètres.
@@ -172,7 +174,7 @@ GRILLE_PIXELS_MAX = 4096
 # Points du relief par kilomètre de côté au-delà de 1 000 m : la maille
 # d'environ 2 m de la zone de 1 000 m (512 points), plutôt que 3,9 m si le
 # plafond de 512 restait — 1 024 points à 2 000 m, une requête au WMS.
-RELIEF_POINTS_PAR_KM = 512
+RELIEF_POINTS_PAR_KM = int(os.environ.get("VUE3D_RELIEF_POINTS_PAR_KM", "512"))
 # Source du MNH qu'on suppose pour lire le terrain en même temps que lui : le
 # LiDAR HD couvrait 77 % d'un échantillon de 60 bâtiments tirés au hasard en
 # France (vue3d/mnh.py), et davantage à mesure que le programme avance.
@@ -502,7 +504,8 @@ def construire(lat, lon, avancer=None, zone=None):
     # La mosaïque, plafonnée à 2 048 px (0,49 m par pixel à 1 000 m), en
     # garde autant par kilomètre au-delà : à 2 000 m, 0,98 m sinon, flou sur
     # le sol comme sur les toits qu'elle habille. Lue alors en tuiles.
-    mosaique = ({"max_pixels": round(2048 * zone / 1000)} if (zone or 0) > 1000 else {})
+    mosaique = ({"max_pixels": round(ORTHO_PX_PAR_KM * zone / 1000), "resolution_m": 1000 / ORTHO_PX_PAR_KM}
+                if (zone or 0) > 1000 or ORTHO_PX_PAR_KM != 2048 else {})
     # L'orthophoto et le terrain se lisent à la taille de la grille MNH, qui
     # ne dépend que de l'emprise : demandés avec elle, pas après elle.
     largeur, hauteur = dimensions_grille(*bbox, TOITS_RESOLUTION_M, GRILLE_PIXELS_MAX)

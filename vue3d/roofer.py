@@ -58,10 +58,10 @@ ROOFER_TAMPON_M = 10
 # Au-delà, le nuage ne tient plus en mémoire : 22,6 millions de points pour
 # 1 000 m à Gordes (bâti et sol : 11,7 millions à Strasbourg), et une zone de
 # 2 000 m en lirait quatre fois plus.
-ROOFER_ZONE_MAX_M = 1000
+ROOFER_ZONE_MAX_M = int(os.environ.get("VUE3D_ROOFER_ZONE_MAX", "1000"))
 # 667 bâtiments en 15 s à Gordes, 1 373 en moins d'une minute à Strasbourg,
 # image amd64 émulée sur un Mac M : large.
-ROOFER_DELAI_S = 600
+ROOFER_DELAI_S = int(os.environ.get("VUE3D_ROOFER_DELAI", "600"))
 CLASSE_SOL, CLASSE_BATI, CLASSE_DIVERS_BATI = 2, 6, 67
 
 
