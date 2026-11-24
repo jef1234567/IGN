@@ -18,6 +18,8 @@ plus tôt que le début est celle du lendemain (exercice de nuit).
   pip install openpyxl                                  (hors requirements)
   python outils/scenario.py scenario.xlsx scenario.json
   python outils/scenario.py --modele cenzub/scenario-modele.xlsx
+  python outils/scenario.py scenario.json site/scenario.json   (exporté par
+                                                l'éditeur : vérifié, recopié)
 
 Sort en erreur, ligne par ligne, sur tout ce qui ne se lit pas : un
 scénario faux ne doit pas arriver sur le site.
@@ -34,8 +36,8 @@ VERSION = 1
 
 # Types affichés par la page, et types réservés au format : ceux-ci passent
 # déjà sur la frise, leur rendu viendra (plan validé du calque scénario).
-TYPES_AFFICHES = {"fumigene", "jalon"}
-TYPES_RESERVES = {"explosion", "incendie", "unite", "nuit"}
+TYPES_AFFICHES = {"fumigene", "jalon", "unite"}
+TYPES_RESERVES = {"explosion", "incendie", "nuit"}
 TYPES = TYPES_AFFICHES | TYPES_RESERVES
 
 COULEURS = {"blanc", "rouge", "vert", "jaune", "violet", "orange", "noir"}
@@ -251,6 +253,37 @@ def heure_texte(s):
     return f"{s // 3600:02d}:{s // 60 % 60:02d}"
 
 
+def verifier_json(chemin):
+    """Un scenario.json exporté par l'éditeur (editeur.html) : relu tel quel,
+    après contrôle de son format, de ses heures et de ses positions."""
+    with open(chemin, encoding="utf-8") as f:
+        s = json.load(f)
+    if not isinstance(s, dict) or s.get("format") != FORMAT:
+        raise ErreurScenario("ce fichier n'est pas un scénario")
+    if s.get("version") != VERSION:
+        raise ErreurScenario(f"version {s.get('version')} du format, attendue {VERSION}")
+    if not isinstance(s.get("debut"), (int, float)) or not isinstance(s.get("fin"), (int, float)) \
+            or s["fin"] < s["debut"] or not isinstance(s.get("evenements"), list):
+        raise ErreurScenario("début, fin ou événements manquants")
+    erreurs = []
+    for ev in s["evenements"]:
+        quoi = f"événement {ev.get('id')} ({ev.get('libelle', '')})"
+        try:
+            if ev.get("type") not in TYPES:
+                raise ErreurScenario(f"type {ev.get('type')!r} inconnu")
+            if not isinstance(ev.get("debut"), (int, float)):
+                raise ErreurScenario("début manquant")
+            if "lat" in ev:
+                verifier_position(ev["lat"], ev["lon"], "position")
+            for pt in (ev.get("params") or {}).get("trajet", []):
+                verifier_position(pt["lat"], pt["lon"], f"point de {heure_texte(int(pt['t']))}")
+        except (ErreurScenario, KeyError, TypeError) as e:
+            erreurs.append(f"{quoi} : {e}")
+    if erreurs:
+        raise ErreurScenario("\n".join(erreurs))
+    return s
+
+
 def lire_xlsx(chemin):
     import openpyxl
     classeur = openpyxl.load_workbook(chemin, data_only=True, read_only=True)
@@ -312,7 +345,7 @@ def main(argv):
         print(__doc__)
         return 2
     try:
-        scenario = convertir(lire_xlsx(argv[1]))
+        scenario = verifier_json(argv[1]) if argv[1].endswith(".json") else convertir(lire_xlsx(argv[1]))
     except ErreurScenario as e:
         print("Scénario refusé :\n" + str(e), file=sys.stderr)
         return 1

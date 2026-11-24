@@ -48,7 +48,8 @@ function verifier(page) {
   lire(principal);
   const nom = f => path.relative(racine, f).replace(/\.js$/, '');
   // L'ordre voulu : celui des imports de main.js.
-  const voulu = modules.get(principal).deps.map(nom);
+  // Ceux de js/commun/ en sont exclus : sans effet, leur place est indifférente.
+  const voulu = modules.get(principal).deps.filter(f => f.startsWith(racine + path.sep)).map(nom);
   // L'ordre du navigateur : post-fixe ; ce qui dépend d'une attente passe après.
   const postfixe = [], vu = new Set();
   const parcourir = f => { if (vu.has(f)) return; vu.add(f); modules.get(f).deps.forEach(parcourir); postfixe.push(f); };

@@ -15,6 +15,13 @@ messages de commit et dans les commentaires des modules.
 
 ### Ajouté
 
+- **Éditeur de scénario sur la carte** (`editeur.html`, lien « Éditeur de
+  scénario » du panneau) : l'orthophoto de la scène en 2D, où l'on pose à
+  l'heure de la frise des fumigènes, des jalons et des unités APP-6 (ami ou
+  ennemi, arme, échelon, PC ; symboles milsymbol, MIT, embarqués pour le hors
+  réseau) avec un itinéraire horodaté. Le travail est gardé par le navigateur
+  et exporté en `scenario.json` ; « Voir en 3D » rejoue le brouillon, où les
+  unités suivent leur itinéraire (24 novembre 2026).
 - **Calque scénario (CENZUB), première étape** : un tableur à part
   (`cenzub/scenario-modele.xlsx` : feuilles Scénario, Points, Événements)
   converti en `scenario.json` par `outils/scenario.py`, qui refuse le fichier

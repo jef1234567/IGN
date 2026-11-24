@@ -1,6 +1,7 @@
 name: Scénario CENZUB (sans refiger la scène)
 
-# Republie le site figé par cenzub.yml avec le scénario de cenzub/scenario.xlsx :
+# Republie le site figé par cenzub.yml avec le scénario de cenzub/scenario.json
+# (exporté par l'éditeur) ou, à défaut, de cenzub/scenario.xlsx :
 # la scène n'est pas reconstruite, seul scenario.json change (quelques minutes
 # au lieu d'une heure et plus). Le site repris est l'artefact du dernier
 # cenzub.yml réussi sur main ; un artefact est gardé 90 jours, au-delà il
@@ -10,7 +11,7 @@ on:
   workflow_dispatch:
   push:
     branches: [main]
-    paths: ['cenzub/scenario.xlsx', 'outils/scenario.py']
+    paths: ['cenzub/scenario.xlsx', 'cenzub/scenario.json', 'outils/scenario.py']
 
 permissions:
   actions: read
@@ -42,11 +43,14 @@ jobs:
       - name: Conversion du tableur
         run: |
           pip install openpyxl
-          if [ -f cenzub/scenario.xlsx ]; then
+          # Le scenario.json de l'éditeur, s'il y est, passe avant le tableur.
+          if [ -f cenzub/scenario.json ]; then
+            python outils/scenario.py cenzub/scenario.json site/scenario.json
+          elif [ -f cenzub/scenario.xlsx ]; then
             python outils/scenario.py cenzub/scenario.xlsx site/scenario.json
           else
             rm -f site/scenario.json
-            echo "Pas de cenzub/scenario.xlsx : site republié sans scénario."
+            echo "Ni cenzub/scenario.json ni cenzub/scenario.xlsx : site republié sans scénario."
           fi
       - uses: actions/upload-artifact@v4
         with:
