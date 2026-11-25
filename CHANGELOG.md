@@ -15,6 +15,10 @@ messages de commit et dans les commentaires des modules.
 
 ### Ajouté
 
+- **Masquer le scénario.** Un ✕ sur la frise de la vue 3D masque le scénario
+  (frise, unités, tracés, fumigènes) et rend le soleil à ses curseurs ; le
+  bouton « Scénario » du tiroir le réaffiche. Le choix est retenu par le
+  navigateur d'une visite à l'autre.
 - **Éditeur de scénario : manœuvre complète.** Tracés de manœuvre (limites,
   flèches, zones et objectifs, amis, ennemis ou neutres), phases sur la frise,
   heure H (la frise affiche H+mm), action de l'unité à chaque point de son

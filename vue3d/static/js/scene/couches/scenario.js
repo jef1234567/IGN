@@ -286,6 +286,12 @@ const bouton = document.getElementById('t-scenario');
 const curseurHeure = document.getElementById('heure');
 const curseurSaison = document.getElementById('saison');
 
+// Masqué une fois, le scénario reste masqué aux visites suivantes de ce
+// navigateur, jusqu'à ce que le bouton du tiroir le réaffiche.
+const CLE_MASQUE = 'cenzub-scenario-masque';
+function lireMasque() { try { return localStorage.getItem(CLE_MASQUE) === '1'; } catch (e) { return false; } }
+function ecrireMasque(m) { try { if (m) localStorage.setItem(CLE_MASQUE, '1'); else localStorage.removeItem(CLE_MASQUE); } catch (e) { /* stockage refusé */ } }
+
 let scenario = null;
 let effets = [];
 let temps = 0;
@@ -315,7 +321,8 @@ function allerA(t) {
     const visible = bouton.classList.contains('on');
     for (const e of effets) e.maj(visible ? temps : -Infinity);
     for (const r of reperes.children) r.classList.toggle('passe', Number(r.dataset.t) <= temps);
-    reglerSoleil();
+    // Masqué, le scénario rend le soleil à ses curseurs.
+    if (visible) reglerSoleil(); else minuteSoleil = null;
 }
 
 function poserReperes() {
@@ -380,8 +387,10 @@ async function charger() {
     }
     poserReperes();
     bouton.hidden = false;
-    bouton.classList.add('on');
-    frise.hidden = false;
+    const on = !lireMasque();
+    bouton.classList.toggle('on', on);
+    frise.hidden = !on;
+    groupe.visible = on;
     // Le relief peut être déjà là : construire tout de suite, il replacera.
     construire();
 }
@@ -401,11 +410,14 @@ lecture.addEventListener('click', () => {
 });
 bouton.addEventListener('click', () => {
     const on = bouton.classList.toggle('on');
+    ecrireMasque(!on);
     frise.hidden = !on;
     groupe.visible = on;
     if (!on && enLecture) lecture.click();
     allerA(temps);
 });
+
+document.getElementById('frise-masquer').addEventListener('click', () => bouton.click());
 
 let precedent = performance.now();
 function avancer(maintenant) {
