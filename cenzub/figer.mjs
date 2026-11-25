@@ -97,19 +97,17 @@ await navigateur.close();
 
 // La page et ses fichiers.
 fs.cpSync('vue3d/static', path.join(sortie, 'static'), { recursive: true });
-// Les deux pages lisent la scène par le service worker : ouvertes d'un lien
-// partagé, à la première visite, il n'est pas encore installé et la scène
-// répond 404 (vu le 25 novembre 2026). Elles passent alors par l'entrée, qui
-// l'installe et les rouvre avec leurs paramètres.
-const passerParLEntree = nom => `<head>\n<script>if ('serviceWorker' in navigator && window.isSecureContext`
-  + ` && !navigator.serviceWorker.controller) location.replace('index.html?vers=${nom}'`
-  + ` + (location.search ? '&' + location.search.slice(1) : ''));</script>`;
+// Les deux pages lisent la scène par le service worker. Sans lui (lien
+// partagé ouvert une première fois, navigateur intégré à une messagerie),
+// sans-sw.js, chargé avant tout, dirige leurs demandes vers data/.
+const enTete = '<head>\n<script src="sans-sw.js"></script>';
 for (const [source, nom] of [['index.html', 'app.html'], ['editeur.html', 'editeur.html']]) {
   const html = fs.readFileSync(path.join('vue3d/static', source), 'utf8');
   if (!html.includes('<head>')) throw new Error(`${source} : pas de <head>`);
-  fs.writeFileSync(path.join(sortie, nom), html.replace('<head>', passerParLEntree(nom)));
+  fs.writeFileSync(path.join(sortie, nom), html.replace("<head>", enTete));
 }
 fs.copyFileSync(path.join(ICI, 'sw.js'), path.join(sortie, 'sw.js'));
+fs.copyFileSync(path.join(ICI, 'sans-sw.js'), path.join(sortie, 'sans-sw.js'));
 // Le calque scénario (SCENARIO : le scenario.json converti par
 // outils/scenario.py) : copié à côté de la page. La page le cherche toujours,
 // pour qu'on le change sans refiger la scène : remplacé dans le dossier hors

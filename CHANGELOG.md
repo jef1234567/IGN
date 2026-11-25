@@ -16,10 +16,11 @@ messages de commit et dans les commentaires des modules.
 ### Corrigé
 
 - **Site CENZUB ouvert d'un lien partagé.** Un lien direct vers `app.html` ou
-  `editeur.html`, ouvert pour la première fois, affichait « Scène
-  indisponible – HTTP 404 » : le service worker qui rejoue la scène n'était
-  pas encore installé. Les deux pages passent alors par l'entrée, qui
-  l'installe et les rouvre avec leurs paramètres.
+  `editeur.html`, ouvert pour la première fois ou dans un navigateur sans
+  service worker (celui intégré à une messagerie), affichait « Scène
+  indisponible – HTTP 404 ». Les deux pages lisent désormais elles-mêmes le
+  manifeste quand le service worker n'est pas là (`sans-sw.js`), et l'entrée
+  n'attend plus son installation plus de 5 s.
 
 ### Ajouté
 
