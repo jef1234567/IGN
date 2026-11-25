@@ -13,6 +13,14 @@ messages de commit et dans les commentaires des modules.
 
 ## Scène v16 — 21 novembre 2026
 
+### Corrigé
+
+- **Site CENZUB ouvert d'un lien partagé.** Un lien direct vers `app.html` ou
+  `editeur.html`, ouvert pour la première fois, affichait « Scène
+  indisponible – HTTP 404 » : le service worker qui rejoue la scène n'était
+  pas encore installé. Les deux pages passent alors par l'entrée, qui
+  l'installe et les rouvre avec leurs paramètres.
+
 ### Ajouté
 
 - **Masquer le scénario.** Un ✕ sur la frise de la vue 3D masque le scénario
