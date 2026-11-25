@@ -52,6 +52,22 @@ messages de commit et dans les commentaires des modules.
   réseau) avec un itinéraire horodaté. Le travail est gardé par le navigateur
   et exporté en `scenario.json` ; « Voir en 3D » rejoue le brouillon, où les
   unités suivent leur itinéraire (24 novembre 2026).
+- **Un camp entier hors réseau, par l'horizon** (24 novembre 2026) : le
+  workflow « Camp hors réseau (horizon) » (`.github/workflows/horizon.yml`,
+  lancé à la main) fige une scène détaillée, puis range dans le dossier les
+  tuiles de l'horizon sur tout un terrain militaire d'OpenStreetMap
+  (Canjuers par défaut) : orthophoto jusqu'au zoom 18 et altitudes du RGE
+  ALTI (`outils/paquet_horizon.py`). Le service worker les sert avant le
+  réseau : le drone survole le camp sans connexion. Hors de la scène, la
+  photo est drapée sur le relief, sans bâti ni arbres en volume.
+  - `&horizon=18` descend l'horizon au zoom 18 (0,45 m par pixel à 44°),
+    au lieu de 17.
+  - Mesuré sur Canjuers (contour OSM de 346 km², gardé dans
+    `zones/canjuers.geojson`) : 46 783 tuiles, 756 Mo lus en 37 min, sans
+    refus de l'IGN ; artefact zippé de 759 Mo.
+  - Le calque scénario pose ses effets sur l'horizon hors de la scène, et
+    `outils/scenario.py` prend `--centre` et `--rayon` au lieu de CENZUB.
+
 - **Calque scénario (CENZUB), première étape** : un tableur à part
   (`cenzub/scenario-modele.xlsx` : feuilles Scénario, Points, Événements)
   converti en `scenario.json` par `outils/scenario.py`, qui refuse le fichier

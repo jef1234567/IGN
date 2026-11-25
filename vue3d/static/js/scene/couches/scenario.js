@@ -14,7 +14,8 @@
 import * as THREE from 'three';
 import { scene, soleil, camera, renderer } from '../socle/rendu.js';
 import { toLocal, toLonLat as toLonLatLocal } from '../socle/projection.js';
-import { ySol } from '../terrain/etat.js';
+import { BORNES } from '../terrain/etat.js';
+import { ySolPartout } from '../terrain/horizon.js';
 import { poserSurLeRelief } from '../terrain/relief.js';
 import { etatCouche } from '../interface/etat-couche.js';
 import {
@@ -109,7 +110,13 @@ function creerFumigene(ev, ventScenario) {
     const pas = DUREE_BOUFFEE_S / BOUFFEES;
     return {
         ev, objet: points,
-        placer() { points.position.y = ySol(ev.lon, ev.lat); },
+        // Hors de la scène, le sol est celui de l'horizon, plus fin à mesure
+        // que ses tuiles arrivent : `aReplacer` le fait relire (replacerHorsScene).
+        placer() {
+            const y = ySolPartout(ev.lon, ev.lat);
+            points.position.y = y ?? 0;
+            this.aReplacer = !dansLaScene(ev.lon, ev.lat);
+        },
         maj(t) {
             const actif = t >= ev.debut && t <= ev.fin + DUREE_BOUFFEE_S;
             points.visible = actif;
@@ -165,15 +172,15 @@ function creerUnite(ev) {
     sprite.userData.infobulle = ev.libelle || p.sidc;
     let posee = null;
     return {
-        ev, objet: sprite,
-        placer() { if (posee) sprite.position.y = ySol(posee.lon, posee.lat) + UNITE_HAUTEUR_M; },
+        ev, objet: sprite, aReplacer: true,     // arrêtée hors scène, l'horizon s'affine sous elle
+        placer() { if (posee) sprite.position.y = (ySolPartout(posee.lon, posee.lat) ?? 0) + UNITE_HAUTEUR_M; },
         maj(t) {
             const pos = Number.isFinite(t) ? positionUnite(ev, t) : null;
             sprite.visible = !!pos;
             if (!pos) return;
             posee = pos;
             const [x, y] = toLocal(pos.lon, pos.lat);
-            sprite.position.set(x, ySol(pos.lon, pos.lat) + UNITE_HAUTEUR_M, -y);
+            sprite.position.set(x, (ySolPartout(pos.lon, pos.lat) ?? 0) + UNITE_HAUTEUR_M, -y);
             // Pas encore entrée : en attente, pâle, à son premier point.
             sprite.material.opacity = pos.avant ? 0.35 : 1;
         },
@@ -255,14 +262,18 @@ function creerTrace(ev) {
         ev, objet,
         placer() {
             const pos = geo.attributes.position;
+            let dehors = false;
             for (let i = 0; i < pos.count; i++) {
                 const [lon, lat] = toLonLatLocal(pos.getX(i), -pos.getZ(i));
-                pos.setY(i, ySol(lon, lat) + 0.6);
+                pos.setY(i, (ySolPartout(lon, lat) ?? 0) + 0.6);
+                dehors ||= !dansLaScene(lon, lat);
             }
+            // Un tracé qui sort de la scène suit l'horizon à mesure qu'il s'affine.
+            this.aReplacer = dehors;
             pos.needsUpdate = true;
             if (etiquette) {
                 const [lon, lat] = toLonLatLocal(milieu[0], milieu[1]);
-                etiquette.position.set(milieu[0], ySol(lon, lat) + 8, -milieu[1]);
+                etiquette.position.set(milieu[0], (ySolPartout(lon, lat) ?? 0) + 8, -milieu[1]);
             }
         },
         maj(t) { objet.visible = Number.isFinite(t) && t >= ev.debut && (ev.fin == null || t <= ev.fin); },
@@ -394,6 +405,17 @@ async function charger() {
     // Le relief peut être déjà là : construire tout de suite, il replacera.
     construire();
 }
+
+function dansLaScene(lon, lat) {
+    return lon >= BORNES.o && lon <= BORNES.e && lat >= BORNES.s && lat <= BORNES.n;
+}
+
+// Toutes les REPLACER_MS, les effets hors de la scène relisent leur sol :
+// l'horizon s'affine au fil du vol, et ses tuiles fines ne sont chargées que
+// près de la caméra. Quelques effets, quelques lectures de tuile : rien à
+// mesurer face au rendu.
+const REPLACER_MS = 2000;
+setInterval(() => { for (const e of effets) if (e.aReplacer) e.placer(); }, REPLACER_MS);
 
 poserSurLeRelief({
     // Arrivé avant le scénario, le relief le trouve vide ; après, il replace.

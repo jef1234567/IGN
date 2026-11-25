@@ -1,0 +1,137 @@
+name: Camp hors réseau (horizon)
+
+# Une scène détaillée, plus les tuiles de l'horizon sur tout un camp
+# (outils/paquet_horizon.py) : le drone survole le camp entier sur un PC hors
+# réseau. Lancé à la main ; ne publie rien sur GitHub Pages (un seul site par
+# dépôt, celui de CENZUB, et 1 Go au plus), le dossier part en artefact.
+on:
+  workflow_dispatch:
+    inputs:
+      camp:
+        description: "Nom du terrain militaire dans OpenStreetMap"
+        default: "Canjuers"
+      emprise:
+        description: "Ou une emprise ouest,sud,est,nord (vide : le contour OSM)"
+        default: ""
+      zoom_max:
+        description: "Zoom le plus fin de l'horizon (17 : 0,9 m par pixel ; 18 : 0,45 m)"
+        default: "18"
+      point:
+        description: "Scène détaillée ?lat=…&lon=…&zone=… (vide : au centre du camp, 2 000 m)"
+        default: ""
+      scenario:
+        description: "Tableur de scénario dans le dépôt (vide : aucun)"
+        default: ""
+
+permissions:
+  contents: write
+
+concurrency:
+  group: horizon
+  cancel-in-progress: false
+
+jobs:
+  construire:
+    runs-on: ubuntu-latest
+    timeout-minutes: 300
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with: { python-version: '3.12' }
+      - uses: actions/setup-node@v4
+        with: { node-version: '20' }
+      - name: Dépendances
+        run: |
+          pip install -r requirements.txt openpyxl
+          npm install --no-save puppeteer-core@23
+      - name: Zone du camp
+        env:
+          CAMP: ${{ inputs.camp || 'Canjuers' }}
+          EMPRISE: ${{ inputs.emprise }}
+          ZOOM_MAX: ${{ inputs.zoom_max || '18' }}
+          POINT_SAISI: ${{ inputs.point }}
+        run: |
+          if [ -n "$EMPRISE" ]; then
+            echo "ZONE=$EMPRISE" >> "$GITHUB_ENV"
+            CENTRE=$(python -c "import sys; o,s,e,n=map(float,sys.argv[1].split(',')); print(f'{(s+n)/2:.5f},{(o+e)/2:.5f}')" "$EMPRISE")
+          else
+            # Le contour gardé dans le dépôt passe avant Overpass, souvent
+            # saturé (trois miroirs sans réponse le 24 novembre 2026, 15 h).
+            GARDE="zones/$(echo "$CAMP" | tr '[:upper:]' '[:lower:]').geojson"
+            if [ -f "$GARDE" ]; then
+              cp "$GARDE" zone.geojson
+              CENTRE=$(python -c "import json,sys; from shapely.geometry import shape; c=shape(json.load(open(sys.argv[1]))['geometry']).centroid; print(f'{c.y:.5f},{c.x:.5f}')" zone.geojson)
+              echo "Contour gardé : $GARDE"
+            else
+              python outils/paquet_horizon.py zone --osm "$CAMP" zone.geojson > zone.txt
+              cat zone.txt
+              CENTRE=$(sed -n 's/^CENTRE=//p' zone.txt)
+              # Pour le garder dans le dépôt : branche zones-horizon.
+              mkdir -p /tmp/z && cp zone.geojson "/tmp/z/$(basename "$GARDE")" && cd /tmp/z && git init -q -b zones-horizon
+              git add . && git -c user.name=ci -c user.email=ci@localhost commit -q -m "contour $CAMP"
+              git push -qf "https://x-access-token:${{ github.token }}@github.com/${{ github.repository }}" zones-horizon
+              cd "$GITHUB_WORKSPACE"
+            fi
+            echo "ZONE=zone.geojson" >> "$GITHUB_ENV"
+          fi
+          echo "CENTRE=$CENTRE" >> "$GITHUB_ENV"
+          if [ -n "$POINT_SAISI" ]; then echo "POINT=$POINT_SAISI" >> "$GITHUB_ENV"
+          else echo "POINT=?lat=${CENTRE%,*}&lon=${CENTRE#*,}&zone=2000" >> "$GITHUB_ENV"; fi
+          python outils/paquet_horizon.py compter "${EMPRISE:-zone.geojson}" --zoom-max "$ZOOM_MAX"
+      - name: Serveur Vue 3D
+        env:
+          VUE3D_ORTHO_PX_PAR_KM: "2400"
+          VUE3D_RELIEF_POINTS_PAR_KM: "1024"
+          VUE3D_SANS_MASSES: "1"
+        run: |
+          mkdir -p cache
+          VUE3D_CACHE=./cache VUE3D_QUOTA=1000 nohup flask --app vue3d.app run --port 8080 > serveur.log 2>&1 &
+          for i in $(seq 1 30); do curl -sf http://localhost:8080/api/sante >/dev/null && break; sleep 2; done
+      - name: Scénario
+        if: ${{ inputs.scenario }}
+        env:
+          TABLEUR: ${{ inputs.scenario }}
+        run: |
+          python outils/scenario.py "$TABLEUR" scenario.json --centre "$CENTRE" --rayon 40000
+          echo "SCENARIO=scenario.json" >> "$GITHUB_ENV"
+      - name: Construction et enregistrement de la scène
+        env:
+          HORIZON: ${{ inputs.zoom_max || '18' }}
+        run: |
+          echo "Scène : $POINT"
+          CHROME=$(which google-chrome) node cenzub/figer.mjs "http://localhost:8080/${POINT}" site
+      - name: Journal du serveur
+        if: always()
+        run: grep -v "api/tuile" serveur.log | grep -iE "WARNING|ERROR|Traceback|Error" | tail -n 60 || true
+      - name: Tuiles de l'horizon sur le camp
+        env:
+          ZOOM_MAX: ${{ inputs.zoom_max || '18' }}
+        run: |
+          python outils/paquet_horizon.py lire "$ZONE" site --zoom-max "$ZOOM_MAX"
+          du -sh site site/tuiles
+          cat >> site/LISEZMOI.txt <<FIN
+
+          Camp entier : le dossier tuiles/ porte l'orthophoto et le relief de l'IGN
+          sur tout le camp (zone.json). Activer le drone et quitter la scène :
+          l'horizon reste net au-dessus du camp, sans réseau.
+          FIN
+      - name: Essai hors réseau (Chrome sans DNS)
+        run: |
+          nohup python3 -m http.server -d site 8081 > acces.log 2>&1 &
+          sleep 2
+          CHROME=$(which google-chrome) node cenzub/essai-hors-reseau.mjs http://localhost:8081/ site hors-reseau.png
+          echo "Tuiles servies par le paquet : $(grep -c 'GET /tuiles/' acces.log)"
+          echo "  dont zoom 18 : $(grep -c 'GET /tuiles/ortho/18/' acces.log), altitudes : $(grep -c 'GET /tuiles/alti/' acces.log)"
+      - name: Capture hors réseau (branche apercus)
+        if: always()
+        run: |
+          test -f hors-reseau.png || exit 0
+          mkdir -p /tmp/ap && cp hors-reseau.png /tmp/ap/ && cd /tmp/ap && git init -q -b apercus-horizon
+          git add hors-reseau.png && git -c user.name=ci -c user.email=ci@localhost commit -q -m "capture ${GITHUB_SHA::7}"
+          git push -qf "https://x-access-token:${{ github.token }}@github.com/${{ github.repository }}" apercus-horizon
+      - uses: actions/upload-artifact@v4
+        with:
+          name: camp-hors-reseau
+          path: site
+          # Des JPEG et des altitudes déjà denses : les recompresser ne gagne rien.
+          compression-level: 1

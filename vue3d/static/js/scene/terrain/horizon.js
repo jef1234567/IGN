@@ -8,6 +8,7 @@ import { ARTEFACT } from '../socle/chargement.js';
 import { M_PAR_DEGRE_LAT, M_PAR_DEGRE_LON, toLocal, toLonLat } from '../socle/projection.js';
 import {
     terrain, altitudeRef, relief, exagVert, anneauRelief, horizonActif, basculerHorizonActif,
+    BORNES, ySol,
 } from './etat.js';
 import {
     scene, FOND_SCENE, brumeScene, brumeHorizon, ciel, camera, renderer, sol,
@@ -46,7 +47,12 @@ import { poserFondAnneau } from './anneau.js';
 // là où leurs altitudes se croisent, c'est la même image qui affleure. La mer,
 // trou de l'anneau, reste à l'horizon, posée à 0 m.
 export const HORIZON_ZOOM_MIN = 9;          // ~55 km de côté en France
-export const HORIZON_ZOOM_MAX = 17;         // ~220 m de côté, 0,9 m par pixel, 7 m entre sommets
+// 17 : ~220 m de côté, 0,9 m par pixel, 7 m entre sommets. `&horizon=18` y
+// ajoute un niveau (0,45 m par pixel) : la version hors réseau d'un camp, dont
+// outils/paquet_horizon.py a rangé les tuiles, se survole alors au détail de
+// l'orthophoto de la scène. En ligne, c'est quatre fois plus de tuiles près du sol.
+export const HORIZON_ZOOM_MAX =
+    new URLSearchParams(location.search).get('horizon') === '18' ? 18 : 17;
 export const HORIZON_MAILLES = 32;
 const HORIZON_RAYON = 60000;
 // Une tuile se divise quand la caméra est à moins de HORIZON_FINESSE fois sa
@@ -77,6 +83,42 @@ const HORIZON_SANS_ALTITUDE = -100;
 // terrestre apparent de R / (1 − k), k = 0,13. À 50 km, l'horizon descend de
 // 170 m ; sans courbure, la plaine montait jusqu'au ciel.
 export const RAYON_TERRE_APPARENT = 6371000 / (1 - 0.13);
+
+/** Altitude de l'horizon sous un point, sur sa tuile chargée la plus fine ; null sinon. */
+export function altitudeHorizon(lon, lat, x, z) {
+    const N = HORIZON_MAILLES, L = N + 1;
+    for (let niveau = HORIZON_ZOOM_MAX; niveau >= HORIZON_ZOOM_MIN; niveau--) {
+        const [px, py] = versPixel(lon, lat, niveau);
+        const t = tuilesHorizon.get(`${niveau}/${Math.floor(px / 256)}/${Math.floor(py / 256)}`);
+        if (!t || !t.mesh) continue;
+        const fx = (px / 256 - t.x) * N, fy = (py / 256 - t.y) * N;
+        const i = Math.min(Math.floor(fx), N - 1), j = Math.min(Math.floor(fy), N - 1);
+        const ax = fx - i, ay = fy - j, k = j * L + i;
+        const h = (t.alts[k] * (1 - ax) + t.alts[k + 1] * ax) * (1 - ay)
+                + (t.alts[k + L] * (1 - ax) + t.alts[k + L + 1] * ax) * ay;
+        return (h - altitudeRef) * exagVert - (x * x + z * z) / (2 * RAYON_TERRE_APPARENT);
+    }
+    return null;
+}
+
+/**
+ * Y du sol en (lon, lat), en unités de scène : le terrain fin dans l'emprise,
+ * sinon l'anneau, sinon l'horizon ; null si rien n'y est chargé. C'est ce qui
+ * pose un fumigène du scénario à 10 km de la scène, sur un camp survolé hors
+ * réseau.
+ */
+export function ySolPartout(lon, lat) {
+    if (!relief) return 0;      // sans relief, tout repose sur le plan à 0
+    if (terrain && lon >= BORNES.o && lon <= BORNES.e && lat >= BORNES.s && lat <= BORNES.n) {
+        return ySol(lon, lat);
+    }
+    if (anneauRelief && Number.isFinite(anneauRelief.alt(lon, lat))) {
+        return (anneauRelief.alt(lon, lat) - altitudeRef) * exagVert;
+    }
+    if (!horizonMontre) return null;
+    const [x, y] = toLocal(lon, lat);
+    return altitudeHorizon(lon, lat, x, -y);
+}
 
 export const tuilesHorizon = new Map();          // "z/x/y" → tuile, chargée ou non
 export let horizonMontre = false;

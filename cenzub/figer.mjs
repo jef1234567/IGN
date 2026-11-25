@@ -39,6 +39,11 @@ const navigateur = await puppeteer.launch({
 const page = await navigateur.newPage();
 await page.setViewport({ width: 1400, height: 850 });
 page.on('console', m => { if (m.type() === 'error') console.log('[page]', m.text()); });
+// Chrome ne garde par défaut que 10 Mo du corps d'une réponse : au-delà,
+// reponse.buffer() échoue. La scène de CENZUB (1 700 m) en fait 8,9 ; celle
+// de 2 000 m au centre de Canjuers, plus, et elle manquait au dossier figé
+// (24 novembre 2026 : « Scène indisponible, HTTP 404 » hors réseau).
+await page._client().send('Network.enable', { maxResourceBufferSize: 500e6, maxTotalBufferSize: 2e9 });
 
 page.on('response', async reponse => {
   const req = reponse.request();
@@ -48,7 +53,10 @@ page.on('response', async reponse => {
   if (u.startsWith(base) && !u.startsWith(base + 'api/')) return;
   if (u.startsWith('data:') || u.startsWith('blob:')) return;
   let corps;
-  try { corps = await reponse.buffer(); } catch { return; }
+  try { corps = await reponse.buffer(); } catch (e) {
+    if (u.includes('/api/')) console.log('Réponse perdue :', u, e.message);
+    return;
+  }
   const type = reponse.headers()['content-type'] || 'application/octet-stream';
   const fichier = crypto.createHash('sha1').update(corps).digest('hex');
   fs.writeFileSync(path.join(sortie, 'data', fichier), corps);
@@ -60,8 +68,13 @@ page.on('response', async reponse => {
 
 console.log('Ouverture de', url);
 await page.goto(url, { waitUntil: 'domcontentloaded', timeout: 120000 });
+// Un refus de l'IGN (503 du serveur) n'est pas un échec : la page réessaie
+// d'elle-même (« Nouvel essai dans 30 s »). Premier build de Canjuers, le
+// 24 novembre 2026 : un 400 sporadique du WMS arrêtait tout à la première
+// minute. Seule une indisponibilité sans nouvel essai arrête le figeage.
 await page.waitForFunction(() => document.getElementById('attente').hidden
-                             || /indisponible/.test(document.getElementById('attente').textContent),
+                             || (/indisponible/.test(document.getElementById('attente').textContent)
+                                 && !/Nouvel essai/.test(document.getElementById('attente').textContent)),
                            { timeout: 40 * 60 * 1000, polling: 2000 });
 const attente = await page.evaluate(() => document.getElementById('attente').textContent);
 if (!(await page.evaluate(() => document.getElementById('attente').hidden))) {
@@ -114,13 +127,20 @@ fs.copyFileSync(path.join(ICI, 'sans-sw.js'), path.join(sortie, 'sans-sw.js'));
 // réseau, ou republié par le workflow scenario.yml.
 const scenario = process.env.SCENARIO;
 if (scenario) fs.copyFileSync(scenario, path.join(sortie, 'scenario.json'));
-const point = new URL(url).search + (avecRoofer ? '&roofer=1' : '') + '&scenario=scenario.json';
+// HORIZON=18 : l'horizon descend au zoom 18, pour un paquet de tuiles
+// (outils/paquet_horizon.py --zoom-max 18) rangé ensuite dans le dossier.
+const point = new URL(url).search + (avecRoofer ? '&roofer=1' : '') + '&scenario=scenario.json'
+  + (process.env.HORIZON === '18' ? '&horizon=18' : '');
 fs.writeFileSync(path.join(sortie, 'index.html'),
   fs.readFileSync(path.join(ICI, 'entree.html'), 'utf8').replace('__POINT__', point));
 fs.copyFileSync(path.join(ICI, 'servir.ps1'), path.join(sortie, 'servir.ps1'));
 fs.copyFileSync(path.join(ICI, 'LISEZMOI.txt'), path.join(sortie, 'LISEZMOI.txt'));
 fs.writeFileSync(path.join(sortie, '.nojekyll'), '');
 fs.writeFileSync(path.join(sortie, 'manifeste.json'), JSON.stringify(manifeste));
+// Sans sa scène, le dossier ne s'ouvre pas : mieux vaut échouer ici.
+if (!Object.keys(manifeste).some(c => c.startsWith('api/scene?'))) {
+  throw new Error('La scène (api/scene) n\'a pas été enregistrée');
+}
 // Diagnostic des sources de hauteur de la scène.
 for (const [cle, [f]] of Object.entries(manifeste)) if (cle.startsWith('api/scene') || cle.startsWith('api/nuage')) {
   const txt = fs.readFileSync(path.join(sortie, 'data', f), 'utf8');

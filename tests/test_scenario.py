@@ -3,6 +3,7 @@
 import datetime as dt
 import json
 import importlib.util
+import json
 import pathlib
 
 import pytest
@@ -126,3 +127,16 @@ def test_exemple_publie_valide():
     """cenzub/scenario.json, l'exemple publié avec le site, passe la vérification."""
     s = scenario.verifier_json(str(RACINE / "cenzub" / "scenario.json"))
     assert {e["type"] for e in s["evenements"]} >= {"unite", "trace", "phase", "fumigene", "jalon"}
+
+
+def test_centre_et_rayon_en_option(tmp_path, monkeypatch):
+    """--centre et --rayon : un camp au lieu de la scène CENZUB."""
+    monkeypatch.setattr(scenario, "CENTRE", scenario.CENTRE)
+    monkeypatch.setattr(scenario, "RAYON_MAX_M", scenario.RAYON_MAX_M)
+    monkeypatch.setattr(scenario, "lire_xlsx", lambda chemin: feuilles(
+        [("06:10", "", "fumigène", "43.75, 6.30", "", "", "")], points=[("Camp", 43.70, 6.43)]))
+    sortie = tmp_path / "s.json"
+    assert scenario.main(["scenario.py", "x.xlsx", str(sortie)]) == 1
+    assert scenario.main(["scenario.py", "x.xlsx", str(sortie), "--centre", "43.70,6.43", "--rayon", "25000"]) == 0
+    assert json.loads(sortie.read_text())["evenements"][0]["lat"] == 43.75
+    assert scenario.main(["scenario.py", "x.xlsx", str(sortie), "--rayon"]) == 2

@@ -20,12 +20,17 @@ plus tôt que le début est celle du lendemain (exercice de nuit).
   python outils/scenario.py --modele cenzub/scenario-modele.xlsx
   python outils/scenario.py scenario.json site/scenario.json   (exporté par
                                                 l'éditeur : vérifié, recopié)
+  python outils/scenario.py scenario.xlsx scenario.json --centre 43.70,6.43 --rayon 25000
+
+--centre et --rayon (m) remplacent la scène CENZUB : un camp survolé hors
+réseau, dont l'horizon couvre des dizaines de kilomètres (paquet_horizon.py).
 
 Sort en erreur, ligne par ligne, sur tout ce qui ne se lit pas : un
 scénario faux ne doit pas arriver sur le site.
 """
 
 import datetime as dt
+import math
 import json
 import re
 import sys
@@ -47,7 +52,8 @@ DUREE_FUMIGENE_S = 120
 TAILLE_FUMIGENE_M = 15
 
 # Emprise de la scène CENZUB (zone de 1 700 m autour de 49.5454, 3.9665),
-# élargie à 5 km : un lieu au-delà est une faute de saisie.
+# élargie à 5 km : un lieu au-delà est une faute de saisie. --centre et
+# --rayon les remplacent.
 CENTRE = (49.5454, 3.9665)
 RAYON_MAX_M = 5000
 
@@ -109,7 +115,7 @@ def lire_nombre(v, nom):
 
 def verifier_position(lat, lon, quoi):
     dy = (lat - CENTRE[0]) * 111320
-    dx = (lon - CENTRE[1]) * 111320 * 0.649    # cos(49,5°)
+    dx = (lon - CENTRE[1]) * 111320 * math.cos(math.radians(CENTRE[0]))
     if (dx * dx + dy * dy) ** 0.5 > RAYON_MAX_M:
         raise ErreurScenario(f"{quoi} : {lat}, {lon} est à plus de {RAYON_MAX_M} m de la scène")
     return {"lat": round(lat, 7), "lon": round(lon, 7)}
@@ -344,6 +350,22 @@ def ecrire_modele(chemin):
 
 
 def main(argv):
+    global CENTRE, RAYON_MAX_M
+    argv = list(argv)
+    try:
+        for option in ("--centre", "--rayon"):
+            if option in argv:
+                i = argv.index(option)
+                valeur = argv[i + 1]
+                del argv[i:i + 2]
+                if option == "--centre":
+                    CENTRE = tuple(float(v) for v in valeur.split(","))
+                    assert len(CENTRE) == 2
+                else:
+                    RAYON_MAX_M = float(valeur)
+    except (IndexError, ValueError, AssertionError):
+        print("--centre lat,lon et --rayon mètres", file=sys.stderr)
+        return 2
     if len(argv) == 3 and argv[1] == "--modele":
         ecrire_modele(argv[2])
         print("Modèle écrit :", argv[2])
