@@ -36,7 +36,7 @@ VERSION = 1
 
 # Types affichés par la page, et types réservés au format : ceux-ci passent
 # déjà sur la frise, leur rendu viendra (plan validé du calque scénario).
-TYPES_AFFICHES = {"fumigene", "jalon", "unite"}
+TYPES_AFFICHES = {"fumigene", "jalon", "unite", "phase", "trace"}
 TYPES_RESERVES = {"explosion", "incendie", "nuit"}
 TYPES = TYPES_AFFICHES | TYPES_RESERVES
 
@@ -206,7 +206,9 @@ def convertir(feuilles):
             libelle = e.pop("libelle", None)
             if libelle is not None:
                 ev["libelle"] = str(libelle).strip()
-            if "lieu" in e or type_ != "jalon":
+            if type_ == "trace":
+                raise ErreurScenario("un tracé se dessine dans l'éditeur (editeur.html), pas au tableur")
+            if "lieu" in e or type_ not in ("jalon", "phase"):
                 ev.update(lire_lieu(e.pop("lieu", None), points))
             params = {k: (v.strip() if isinstance(v, str) else v) for k, v in e.items()}
             for k, v in params.items():
@@ -275,7 +277,12 @@ def verifier_json(chemin):
                 raise ErreurScenario("début manquant")
             if "lat" in ev:
                 verifier_position(ev["lat"], ev["lon"], "position")
-            for pt in (ev.get("params") or {}).get("trajet", []):
+            params = ev.get("params") or {}
+            if ev["type"] == "trace" and len(params.get("points", [])) < 2:
+                raise ErreurScenario("tracé de moins de deux points")
+            for pt in params.get("points", []):
+                verifier_position(pt["lat"], pt["lon"], "point du tracé")
+            for pt in params.get("trajet", []):
                 verifier_position(pt["lat"], pt["lon"], f"point de {heure_texte(int(pt['t']))}")
         except (ErreurScenario, KeyError, TypeError) as e:
             erreurs.append(f"{quoi} : {e}")
@@ -319,7 +326,7 @@ def ecrire_modele(chemin):
               ("06:20", "06:22", "fumigene", "Centre de la scène", "Signal de ralliement", "rouge", 8, None, None),
               ("06:30", "06:40", "fumigene", "49.5445, 3.9690", "Masque sud-est, vent tourné", "blanc", 25, 200, 5)]:
         e.append(l)
-    types = DataValidation(type="list", formula1='"' + ",".join(sorted(TYPES_AFFICHES)) + '"', allow_blank=False)
+    types = DataValidation(type="list", formula1='"' + ",".join(sorted(TYPES_AFFICHES - {"trace"})) + '"', allow_blank=False)
     couleurs = DataValidation(type="list", formula1='"' + ",".join(sorted(COULEURS)) + '"', allow_blank=True)
     e.add_data_validation(types)
     e.add_data_validation(couleurs)

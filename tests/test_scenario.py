@@ -113,3 +113,16 @@ def test_json_de_l_editeur(tmp_path):
     chemin.write_text(json.dumps(s), encoding="utf-8")
     with pytest.raises(scenario.ErreurScenario, match="point de 06:10"):
         scenario.verifier_json(str(chemin))
+
+
+def test_phase_au_tableur_trace_refuse():
+    s = scenario.convertir(feuilles([("06:00", "06:20", "phase", None, "Phase 1", None, None)]))
+    assert s["evenements"][0] == {"id": "e2", "type": "phase", "debut": 21600, "fin": 22800, "libelle": "Phase 1"}
+    with pytest.raises(scenario.ErreurScenario, match="éditeur"):
+        scenario.convertir(feuilles([("06:00", None, "trace", "Église", "LD", None, None)]))
+
+
+def test_exemple_publie_valide():
+    """cenzub/scenario.json, l'exemple publié avec le site, passe la vérification."""
+    s = scenario.verifier_json(str(RACINE / "cenzub" / "scenario.json"))
+    assert {e["type"] for e in s["evenements"]} >= {"unite", "trace", "phase", "fumigene", "jalon"}
