@@ -392,7 +392,9 @@ html.tiroir #avis { bottom:calc(20px + var(--credits-h, 0px)); }
                               background:none; color:inherit; cursor:pointer; font-size:11px; }
 #frise select { background:#1f2328; color:inherit; border:1px solid var(--line); border-radius:4px; }
 #frise-heure { font-variant-numeric:tabular-nums; }
-#frise-titre { color:var(--muted); overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+#frise-titre { flex:1; color:var(--muted); overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+#frise button#frise-masquer { border:0; background:none; color:var(--muted); cursor:pointer; font-size:14px; padding:0 4px; }
+#frise button#frise-masquer:hover { color:#e8eaed; }
 #frise .piste { position:relative; }
 #frise-curseur { width:100%; margin:0; }
 #frise-reperes { position:relative; height:10px; margin-bottom:2px; }
