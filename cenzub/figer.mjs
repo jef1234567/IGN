@@ -97,8 +97,18 @@ await navigateur.close();
 
 // La page et ses fichiers.
 fs.cpSync('vue3d/static', path.join(sortie, 'static'), { recursive: true });
-fs.copyFileSync('vue3d/static/index.html', path.join(sortie, 'app.html'));
-fs.copyFileSync('vue3d/static/editeur.html', path.join(sortie, 'editeur.html'));
+// Les deux pages lisent la scène par le service worker : ouvertes d'un lien
+// partagé, à la première visite, il n'est pas encore installé et la scène
+// répond 404 (vu le 25 novembre 2026). Elles passent alors par l'entrée, qui
+// l'installe et les rouvre avec leurs paramètres.
+const passerParLEntree = nom => `<head>\n<script>if ('serviceWorker' in navigator && window.isSecureContext`
+  + ` && !navigator.serviceWorker.controller) location.replace('index.html?vers=${nom}'`
+  + ` + (location.search ? '&' + location.search.slice(1) : ''));</script>`;
+for (const [source, nom] of [['index.html', 'app.html'], ['editeur.html', 'editeur.html']]) {
+  const html = fs.readFileSync(path.join('vue3d/static', source), 'utf8');
+  if (!html.includes('<head>')) throw new Error(`${source} : pas de <head>`);
+  fs.writeFileSync(path.join(sortie, nom), html.replace('<head>', passerParLEntree(nom)));
+}
 fs.copyFileSync(path.join(ICI, 'sw.js'), path.join(sortie, 'sw.js'));
 // Le calque scénario (SCENARIO : le scenario.json converti par
 // outils/scenario.py) : copié à côté de la page. La page le cherche toujours,

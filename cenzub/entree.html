@@ -21,7 +21,13 @@
   if (!navigator.serviceWorker.controller) {
     await new Promise(r => navigator.serviceWorker.addEventListener('controllerchange', r, { once: true }));
   }
-  location.replace('app.html' + '__POINT__');
+  // Venue d'un lien partagé (app.html ou editeur.html ouverts sans le service
+  // worker, renvoyés ici avec ?vers=) : on y retourne avec leurs paramètres.
+  const ici = new URLSearchParams(location.search);
+  const vers = ['app.html', 'editeur.html'].includes(ici.get('vers')) ? ici.get('vers') : 'app.html';
+  ici.delete('vers');
+  const q = ici.toString();
+  location.replace(vers + (q ? '?' + q : '__POINT__'));
 })().catch(e => { document.getElementById('msg').textContent = 'Erreur : ' + e.message; });
 </script>
 </body>
