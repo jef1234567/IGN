@@ -42,7 +42,7 @@ aside h2 { margin:0 0 8px; font-size:13px; }
 #liste li span { overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
 #liste .pastille { flex:none; width:10px; height:10px; border-radius:50%; margin-top:3px; border:1px solid #0006; }
 footer { display:flex; align-items:center; gap:10px; padding:8px 12px; border-top:1px solid var(--ligne); background:var(--panneau); }
-#frise-heure { font-variant-numeric:tabular-nums; min-width:5.5em; }
+#frise-heure { font-variant-numeric:tabular-nums; min-width:9em; }
 .piste { position:relative; flex:1; }
 #frise-curseur { width:100%; margin:0; padding:0; border:0; background:none; }
 #frise-reperes { position:relative; height:10px; margin-bottom:2px; }
@@ -51,5 +51,9 @@ footer { display:flex; align-items:center; gap:10px; padding:8px 12px; border-to
 .repere.fumigene { background:#cfd6dd; }
 .repere.unite { background:#6aa5e8; height:5px; top:5px; }
 .repere.jalon { width:3px; background:var(--accent); }
+.repere.phase { top:0; height:4px; background:#f0c674; opacity:.8; border-radius:0; }
+.repere.trace { display:none; }
+#frise-phase { color:#f0c674; font-weight:600; min-width:8em; }
+#outils select { background:rgba(31,35,40,.92); }
 .repere.passe { opacity:1; }
 @media (max-width: 800px) { main { flex-direction:column; } aside { width:auto; max-height:40vh; border-left:0; } }

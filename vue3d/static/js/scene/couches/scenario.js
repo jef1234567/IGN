@@ -13,13 +13,13 @@
 
 import * as THREE from 'three';
 import { scene, soleil, camera, renderer } from '../socle/rendu.js';
-import { toLocal } from '../socle/projection.js';
+import { toLocal, toLonLat as toLonLatLocal } from '../socle/projection.js';
 import { BORNES } from '../terrain/etat.js';
 import { ySolPartout } from '../terrain/horizon.js';
 import { poserSurLeRelief } from '../terrain/relief.js';
 import { etatCouche } from '../interface/etat-couche.js';
 import {
-    COULEURS_FUMEE as COULEURS, positionUnite, sidc, texteHeure, verifierScenario as verifier, CLE_BROUILLON,
+    COULEURS_FUMEE as COULEURS, COULEURS_CAMP, positionUnite, sidc, texteRelatif, phaseEnCours, texteHeure, verifierScenario as verifier, CLE_BROUILLON,
 } from '../../commun/scenario.js';
 
 const SOURCE = new URLSearchParams(location.search).get('scenario');
@@ -187,7 +187,100 @@ function creerUnite(ev) {
     };
 }
 
-const FABRIQUES = { fumigene: creerFumigene, unite: creerUnite };
+// --- Tracé de manœuvre ---------------------------------------------------------
+// Un ruban posé sur le relief, redécoupé tous les PAS_RUBAN_M pour en suivre
+// les creux (un segment de 300 m tendu entre deux points passerait sous une
+// butte) ; la flèche finit en pointe, la zone se referme. Son nom, en
+// étiquette au-dessus du milieu.
+const PAS_RUBAN_M = 10;
+const LARGEUR_M = { fleche: 5, ligne: 2, zone: 2 };
+
+function etiquetteSprite(texte, couleur) {
+    const c = document.createElement('canvas'), g = c.getContext('2d');
+    g.font = '600 28px system-ui';
+    c.width = Math.ceil(g.measureText(texte).width) + 16;
+    c.height = 40;
+    g.font = '600 28px system-ui';
+    g.lineWidth = 6; g.strokeStyle = '#000'; g.fillStyle = couleur;
+    g.strokeText(texte, 8, 29); g.fillText(texte, 8, 29);
+    const t = new THREE.CanvasTexture(c);
+    t.colorSpace = THREE.SRGBColorSpace;
+    const sp = new THREE.Sprite(new THREE.SpriteMaterial({ map: t, transparent: true, depthTest: false, sizeAttenuation: false }));
+    sp.renderOrder = 11;
+    sp.scale.set(0.03 * c.width / c.height, 0.03, 1);
+    return sp;
+}
+
+function creerTrace(ev) {
+    const p = ev.params || {}, pts = (p.points || []).map(q => toLocal(q.lon, q.lat));
+    if (pts.length < 2) return null;
+    if (p.forme === 'zone') pts.push(pts[0]);
+    // Axe redécoupé, en mètres locaux [x, nord].
+    const axe = [pts[0]];
+    for (let i = 1; i < pts.length; i++) {
+        const [x0, y0] = pts[i - 1], [x1, y1] = pts[i], n = Math.max(1, Math.ceil(Math.hypot(x1 - x0, y1 - y0) / PAS_RUBAN_M));
+        for (let k = 1; k <= n; k++) axe.push([x0 + (x1 - x0) * k / n, y0 + (y1 - y0) * k / n]);
+    }
+    const demi = (LARGEUR_M[p.forme] || 2) / 2, fleche = p.forme === 'fleche';
+    const tete = fleche ? 4 : 0;                // dernier tronçon remplacé par la pointe
+    const sommets = [], cotes = [];
+    const corps = fleche ? axe.length - tete : axe.length;
+    for (let i = 0; i < corps; i++) {
+        const [xa, ya] = axe[Math.max(i - 1, 0)], [xb, yb] = axe[Math.min(i + 1, axe.length - 1)];
+        const l = Math.hypot(xb - xa, yb - ya) || 1, nx = -(yb - ya) / l, ny = (xb - xa) / l;
+        cotes.push([axe[i][0] + nx * demi, axe[i][1] + ny * demi], [axe[i][0] - nx * demi, axe[i][1] - ny * demi]);
+    }
+    const index = [];
+    for (let i = 0; i < corps - 1; i++) index.push(2 * i, 2 * i + 2, 2 * i + 1, 2 * i + 1, 2 * i + 2, 2 * i + 3);
+    if (fleche) {
+        // Pointe : trois fois la largeur du trait, du dernier point du corps au bout.
+        const [xa, ya] = axe[corps - 1], [xb, yb] = axe[axe.length - 1];
+        const l = Math.hypot(xb - xa, yb - ya) || 1, nx = -(yb - ya) / l, ny = (xb - xa) / l, k = cotes.length;
+        cotes.push([xa + nx * demi * 4, ya + ny * demi * 4], [xa - nx * demi * 4, ya - ny * demi * 4], [xb, yb]);
+        index.push(k, k + 2, k + 1);
+    }
+    for (const c of cotes) sommets.push(c[0], 0, -c[1]);
+    const geo = new THREE.BufferGeometry();
+    geo.setAttribute('position', new THREE.Float32BufferAttribute(sommets, 3));
+    geo.setIndex(index);
+    const couleur = COULEURS_CAMP[p.camp] || COULEURS_CAMP.neutre;
+    const ruban = new THREE.Mesh(geo, new THREE.MeshBasicMaterial({
+        color: couleur, transparent: true, opacity: 0.85, side: THREE.DoubleSide, depthWrite: false,
+        polygonOffset: true, polygonOffsetFactor: -4 }));
+    ruban.renderOrder = 5;
+    const objet = new THREE.Group();
+    objet.add(ruban);
+    let etiquette = null;
+    if (ev.libelle) {
+        etiquette = etiquetteSprite(ev.libelle, p.camp === 'neutre' || !p.camp ? '#ffffff' : couleur);
+        objet.add(etiquette);
+    }
+    const milieu = p.forme === 'zone'
+        ? pts.slice(0, -1).reduce(([a, b], [c, d]) => [a + c / (pts.length - 1), b + d / (pts.length - 1)], [0, 0])
+        : axe[Math.floor(axe.length / 2)];
+    return {
+        ev, objet,
+        placer() {
+            const pos = geo.attributes.position;
+            let dehors = false;
+            for (let i = 0; i < pos.count; i++) {
+                const [lon, lat] = toLonLatLocal(pos.getX(i), -pos.getZ(i));
+                pos.setY(i, (ySolPartout(lon, lat) ?? 0) + 0.6);
+                dehors ||= !dansLaScene(lon, lat);
+            }
+            // Un tracé qui sort de la scène suit l'horizon à mesure qu'il s'affine.
+            this.aReplacer = dehors;
+            pos.needsUpdate = true;
+            if (etiquette) {
+                const [lon, lat] = toLonLatLocal(milieu[0], milieu[1]);
+                etiquette.position.set(milieu[0], (ySolPartout(lon, lat) ?? 0) + 8, -milieu[1]);
+            }
+        },
+        maj(t) { objet.visible = Number.isFinite(t) && t >= ev.debut && (ev.fin == null || t <= ev.fin); },
+    };
+}
+
+const FABRIQUES = { fumigene: creerFumigene, unite: creerUnite, trace: creerTrace };
 
 // --- Frise --------------------------------------------------------------------
 const groupe = new THREE.Group();
@@ -227,7 +320,9 @@ function reglerSoleil() {
 function allerA(t) {
     temps = Math.min(Math.max(t, scenario.debut), scenario.fin);
     curseur.value = temps;
-    affHeure.textContent = texteHeure(temps);
+    const phase = phaseEnCours(scenario, temps);
+    affHeure.textContent = texteHeure(temps) + (scenario.heure_h != null ? ` · ${texteRelatif(temps, scenario.heure_h)}` : '');
+    document.getElementById('frise-titre').textContent = phase ? phase.libelle : (scenario.titre || 'Scénario');
     const visible = bouton.classList.contains('on');
     for (const e of effets) e.maj(visible ? temps : -Infinity);
     for (const r of reperes.children) r.classList.toggle('passe', Number(r.dataset.t) <= temps);
@@ -245,7 +340,7 @@ function poserReperes() {
         r.style.left = `${(100 * (ev.debut - scenario.debut) / duree).toFixed(2)}%`;
         if (ev.fin > ev.debut) r.style.width = `${(100 * (ev.fin - ev.debut) / duree).toFixed(2)}%`;
         r.title = `${texteHeure(ev.debut).slice(0, 5)} · ${ev.type}${ev.libelle ? ' : ' + ev.libelle : ''}`
-            + (FABRIQUES[ev.type] || ev.type === 'jalon' ? '' : ' (pas encore dessiné)');
+            + (FABRIQUES[ev.type] || ev.type === 'jalon' || ev.type === 'phase' ? '' : ' (pas encore dessiné)');
         if (ev.type === 'unite' && ev.fin > ev.debut) r.title += ` → ${texteHeure(ev.fin).slice(0, 5)}`;
         r.addEventListener('click', () => allerA(ev.debut));
         reperes.appendChild(r);

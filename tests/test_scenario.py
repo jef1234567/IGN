@@ -116,6 +116,19 @@ def test_json_de_l_editeur(tmp_path):
         scenario.verifier_json(str(chemin))
 
 
+def test_phase_au_tableur_trace_refuse():
+    s = scenario.convertir(feuilles([("06:00", "06:20", "phase", None, "Phase 1", None, None)]))
+    assert s["evenements"][0] == {"id": "e2", "type": "phase", "debut": 21600, "fin": 22800, "libelle": "Phase 1"}
+    with pytest.raises(scenario.ErreurScenario, match="éditeur"):
+        scenario.convertir(feuilles([("06:00", None, "trace", "Église", "LD", None, None)]))
+
+
+def test_exemple_publie_valide():
+    """cenzub/scenario.json, l'exemple publié avec le site, passe la vérification."""
+    s = scenario.verifier_json(str(RACINE / "cenzub" / "scenario.json"))
+    assert {e["type"] for e in s["evenements"]} >= {"unite", "trace", "phase", "fumigene", "jalon"}
+
+
 def test_centre_et_rayon_en_option(tmp_path, monkeypatch):
     """--centre et --rayon : un camp au lieu de la scène CENZUB."""
     monkeypatch.setattr(scenario, "CENTRE", scenario.CENTRE)
