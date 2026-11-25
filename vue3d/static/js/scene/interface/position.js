@@ -123,16 +123,6 @@ const MESSAGES_GEOLOC = {
 
 const btnMoi = document.getElementById('t-moi');
 
-// La vue en voiture (static/voiture.html), qui part de la position suivie si
-// elle est connue, sinon du point de la scène ; de l'accueil, de la
-// géolocalisation seule.
-const lienVoiture = document.getElementById('t-voiture');
-function majLienVoiture() {
-    const [lat, lon] = moi.lat != null ? [moi.lat, moi.lon] : ACCUEIL ? [null, null] : [LAT0, LON0];
-    lienVoiture.href = lat == null ? 'voiture' : `voiture?lat=${lat.toFixed(5)}&lon=${lon.toFixed(5)}`;
-}
-lienVoiture.addEventListener('click', majLienVoiture);
-majLienVoiture();
 let suiviPosition = null;   // identifiant du watchPosition en cours
 
 // Le bouton est sur la vue, et sur téléphone le panneau est replié : chaque

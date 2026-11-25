@@ -13,6 +13,22 @@ messages de commit et dans les commentaires des modules.
 
 ## Scène v16 — 21 novembre 2026
 
+### Retiré
+
+- **Interface allégée.** La page de la scène ne garde en vue que ce qui sert
+  à l'entraînement. Retirés : la recherche d'un lieu, le choix de la zone et
+  « Reconstruire la scène », le bouton « En voiture », les DPE, les ventes
+  DVF, les bornes de recharge, l'ensoleillement des toits, l'avis 👍/👎, le
+  don Tipeee et le texte « Ce que ça montre ». Les routes du serveur restent
+  en place, plus aucune page ne les appelle.
+
+### Modifié
+
+- **Menu « Avancé ».** Les toits (en pente, mesurés, roofer), les monuments
+  OSM, le nuage LiDAR, le plan IGN, l'exagération Z, l'export BIM et les
+  mesures (soleil, bâtiments, terrain, végétation) sont rangés dans un menu
+  replié en bas du panneau.
+
 ### Corrigé
 
 - **Site CENZUB ouvert d'un lien partagé.** Un lien direct vers `app.html` ou

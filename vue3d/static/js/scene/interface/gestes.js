@@ -2,9 +2,7 @@
 
 import { camera, renderer, controls } from '../socle/rendu.js';
 import { ciblesSurvol } from './survol.js';
-import { venteParBatiment, dvfActif, afficherVentesParcelle } from '../couches/foncier.js';
 import { afficherFicheBatiment } from './fiche.js';
-import { ouvrirTiroir } from './tiroir.js';
 import {
     raycaster, souris, objetSous, epinglerTip, epinglerObjet, detacherTip,
 } from './interactions.js';
@@ -113,15 +111,6 @@ renderer.domElement.addEventListener('pointerup', e => {
     const objet = objetSous(hit);
     if (objet) { epinglerObjet(objet, e, r); return; }
     const ud = hit.object.userData;
-    // Une parcelle vendue, ou un bâtiment posé dessus : ses ventes dans le panneau.
-    if (ud.parcelle) {
-        afficherVentesParcelle(ud.parcelle);
-        // En tiroir, le panneau est caché : il s'ouvre sur les ventes.
-        if (document.documentElement.classList.contains('tiroir')) ouvrirTiroir(document.getElementById('sec-dvf'));
-        return;
-    }
-    const vendu = dvfActif && ud.p && venteParBatiment.get(ud.p.cleabs);
-    if (vendu) afficherVentesParcelle(vendu.parcelle);
     // La végétation se survole mais ne s'ouvre pas : elle n'a pas de fiche.
     if (ud.vegetation || !ud.anneau) return;
     afficherFicheBatiment(ud);

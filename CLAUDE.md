@@ -20,9 +20,7 @@ VUE3D_ROOFER=docker VUE3D_CACHE=./cache flask --app vue3d.app run --port 8080   
 ./run_container.sh                               # l'image sous container d'Apple (macOS 26) au lieu de Docker ; pas de CoreML
 node outils/verifier-geometrie.mjs               # géométrie de la page, exécutée sous Node
 node outils/verifier-modules.mjs                 # ordre d'évaluation des modules des pages
-node outils/verifier-recherche.mjs               # recherche d'un lieu, exécutée sous Node
 node outils/verifier-export.mjs essai.ifc essai.gml   # exports IFC et CityGML, exécutés sous Node
-node outils/verifier-solaire.mjs http://localhost:8080   # ensoleillement des toits contre PVGIS (réseau)
 python outils/mesure_eoliennes.py osm donnees/eoliennes-france.json   # éoliennes : tags OSM (osm), BD TOPO (bdtopo), mâts au LiDAR (lidar), blocs (blocs ~/Services/vue-3d-ign/cache)
 node outils/mesure-ecarts-toits.mjs "http://localhost:8080/?lat=43.9116&lon=5.2003"   # toits contre le nuage LiDAR (puppeteer-core)
 python outils/valider_ifc.py essai.ifc           # validation par ifcopenshell (pip install ifcopenshell pytest, hors requirements)
@@ -61,7 +59,7 @@ vue3d/
   nuage.py      bâti du nuage de points LiDAR HD (dalles COPC lues par plages, via geopf) ; ouvrages ajourés en points : couche à part, lue en deux temps (carré proche, puis zone entière)
   vehicules.py  véhicules, piscines et navires lus sur l'orthophoto par un réseau ONNX : couche à part, optionnelle (VUE3D_VEHICULES) ; les navires gardés sur l'eau, mer comprise (communes BD TOPO, RGE ALTI)
   releves.py    détections gardées par rectangle de terrain (cache/releves/) : un point décalé ne détecte que la bande nouvelle
-  solaire.py    année type de PVGIS (direct, diffus, global des 8 760 heures) : couche à part, lue au clic seulement, datée ; l'ensoleillement des toits se calcule dans la page, sur le GPU (couches/solaire.js)
+  solaire.py    année type de PVGIS (direct, diffus, global des 8 760 heures) : couche à part, lue au clic seulement, datée ; plus appelée par la page depuis le 25 novembre 2026
   panneaux.py   panneaux solaires du registre OpenPVMapper (SQLite R-tree) : couche à part, optionnelle (VUE3D_PANNEAUX)
   roofer.py     toits de roofer (3DBAG, GPLv3, lancé à part : image Docker ou exécutable) sur le nuage LiDAR HD (sol et bâti) et les emprises de la scène, pour comparer : couche à part, optionnelle (VUE3D_ROOFER), zones de 1 000 m au plus
   osm_local.py  OpenStreetMap sans Overpass : base SQLite R-tree des parties, des limites et de la signalisation, aux réponses de la forme d'Overpass ; optionnelle (VUE3D_OSM), sans elle le service interroge Overpass
