@@ -106,6 +106,20 @@ jobs:
         run: |
           echo "Scène : $POINT"
           CHROME=$(which google-chrome) node cenzub/figer.mjs "http://localhost:8080/${POINT}" site
+      # Le pourtour et les repères que la page affiche (interface/reperes.js) :
+      # gardés dans le dépôt (zones/<camp>-reperes.geojson), sinon lus à
+      # Overpass. Sans eux le camp s'ouvre quand même : un échec n'arrête rien.
+      - name: Pourtour et repères du camp
+        if: ${{ !inputs.emprise }}
+        env:
+          CAMP: ${{ inputs.camp || 'Canjuers' }}
+        run: |
+          cp zone.geojson site/camp.geojson
+          GARDE="zones/$(echo "$CAMP" | tr '[:upper:]' '[:lower:]')-reperes.geojson"
+          if [ -f "$GARDE" ]; then cp "$GARDE" site/reperes.geojson
+          else timeout 900 python outils/paquet_horizon.py reperes zone.geojson site/reperes.geojson \
+            || echo "::warning::Repères OSM non lus : le camp est publié sans eux."; fi
+          ls -l site/camp.geojson site/reperes.geojson || true
       - name: Journal du serveur
         if: always()
         run: grep -v "api/tuile" serveur.log | grep -iE "WARNING|ERROR|Traceback|Error" | tail -n 60 || true
