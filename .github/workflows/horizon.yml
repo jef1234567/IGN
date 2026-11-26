@@ -14,10 +14,10 @@ on:
         description: "Ou une emprise ouest,sud,est,nord (vide : le contour OSM)"
         default: ""
       zoom_max:
-        description: "Zoom le plus fin de l'horizon (17 : 0,9 m par pixel ; 18 : 0,45 m)"
+        description: "Zoom le plus fin de l'horizon (16 : 1,8 m par pixel ; 17 : 0,9 m ; 18 : 0,45 m)"
         default: "18"
       point:
-        description: "Scène détaillée ?lat=…&lon=…&zone=… (vide : au centre du camp, 2 000 m)"
+        description: "Scène détaillée ?lat=…&lon=…&zone=… (vide : au centre du camp, 150 m, la plus petite : relief et photo aérienne partout)"
         default: ""
       scenario:
         description: "Tableur de scénario dans le dépôt (vide : aucun)"
@@ -81,7 +81,7 @@ jobs:
           fi
           echo "CENTRE=$CENTRE" >> "$GITHUB_ENV"
           if [ -n "$POINT_SAISI" ]; then echo "POINT=$POINT_SAISI" >> "$GITHUB_ENV"
-          else echo "POINT=?lat=${CENTRE%,*}&lon=${CENTRE#*,}&zone=2000" >> "$GITHUB_ENV"; fi
+          else echo "POINT=?lat=${CENTRE%,*}&lon=${CENTRE#*,}&zone=150" >> "$GITHUB_ENV"; fi
           python outils/paquet_horizon.py compter "${EMPRISE:-zone.geojson}" --zoom-max "$ZOOM_MAX"
       - name: Serveur Vue 3D
         env:
@@ -102,6 +102,7 @@ jobs:
       - name: Construction et enregistrement de la scène
         env:
           HORIZON: ${{ inputs.zoom_max || '18' }}
+          VASTE: "1"
         run: |
           echo "Scène : $POINT"
           CHROME=$(which google-chrome) node cenzub/figer.mjs "http://localhost:8080/${POINT}" site

@@ -22,6 +22,7 @@ import { rose } from './interactions.js';
 import { orbite, vitesse } from './boutons.js';
 import { placerFleches } from './decalage.js';
 import { droneActif, majDrone } from './drone.js';
+import { majVaste } from './vaste.js';
 
 function dimensionner() {
     const w = host.clientWidth, h = host.clientHeight;
@@ -231,7 +232,7 @@ function boucle(maintenant) {
         camera.position.z = controls.target.z + dx * sin + dz * cos;
     }
     if (droneActif) majDrone(dt, maintenant);
-    else controls.update();
+    else { majVaste(); controls.update(); }
     tournerEoliennes(dt, Number(vitesse.value));
     majHorizon(maintenant);
     if (horizonActif) {

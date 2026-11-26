@@ -26,6 +26,14 @@ messages de commit et dans les commentaires des modules.
   débattement, et la ligne de vue dit « je peux le traiter » ou non. Décocher
   « Ligne de vue » efface la ligne tracée.
 
+- **Naviguer sur tout un camp** (26 novembre 2026) : `&vaste=1`, posé par
+  le workflow « Camp hors réseau (horizon) », change la navigation : glisser
+  déplace le point visé sur le sol, le clic droit pivote, la molette recule
+  jusqu'à 30 km et revient vers le curseur ; le point visé suit le relief et
+  la caméra reste à 20 m au moins au-dessus. La page s'ouvre à 15 km, vue du
+  sud, avec le relief et la photo aérienne seuls, et la scène du centre est
+  réduite à 150 m. `&horizon=16` (ou 15) arrête l'horizon à ce zoom : le
+  paquet du zoom 16 est environ trois fois plus léger que celui du zoom 17.
 - **Un camp en ligne, à côté de CENZUB** (26 novembre 2026) : l'option
   « publier » du workflow « Camp hors réseau (horizon) » range le dossier du
   camp sur la branche `site-<camp>`, que le workflow de CENZUB publie sous
