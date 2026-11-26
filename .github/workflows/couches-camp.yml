@@ -1,0 +1,41 @@
+name: Couches publiques d'un camp
+
+# Natura 2000 et zones protégées (INPN), lignes électriques, ponts, gués,
+# points d'eau et réservoirs, pistes et chemins (BD TOPO) : lus à la
+# Géoplateforme par outils/couches_camp.py et poussés sur la branche
+# couches-<camp>, d'où on les verse dans zones/<camp>-couches/. Le
+# conteneur de développement n'atteint pas la Géoplateforme : c'est ici
+# qu'ils se lisent.
+on:
+  workflow_dispatch:
+    inputs:
+      camp:
+        description: "Contour gardé dans zones/ (sans .geojson)"
+        default: "canjuers"
+
+permissions:
+  contents: write
+
+jobs:
+  lire:
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with: { python-version: '3.12' }
+      - run: pip install -r requirements.txt
+      - name: Couches
+        env:
+          CAMP: ${{ inputs.camp || 'canjuers' }}
+        run: |
+          mkdir -p sortie
+          python outils/couches_camp.py lire "zones/$CAMP.geojson" sortie | tee lecture.txt
+          ls -l sortie
+      - name: Branche couches-<camp>
+        env:
+          CAMP: ${{ inputs.camp || 'canjuers' }}
+        run: |
+          cd sortie && git init -q -b "couches-$CAMP"
+          git add -A && git -c user.name=ci -c user.email=ci@localhost commit -q -m "couches $CAMP ${GITHUB_SHA::7}"
+          git push -qf "https://x-access-token:${{ github.token }}@github.com/${{ github.repository }}" "couches-$CAMP"

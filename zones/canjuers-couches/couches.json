@@ -1,0 +1,51 @@
+{
+ "date": "2026-11-26",
+ "marge_m": 2000,
+ "couches": {
+  "protections": {
+   "objets": 31,
+   "classes": {
+    "zps": 1,
+    "zsc": 4,
+    "znieff1": 14,
+    "znieff2": 9,
+    "pnr": 1,
+    "reserve": 1,
+    "apb": 1
+   },
+   "source": "INPN (MNHN, OFB), via la Géoplateforme IGN, Licence Ouverte 2.0"
+  },
+  "electricite": {
+   "objets": 32,
+   "classes": {
+    "poste": 6,
+    "distribution": 26
+   },
+   "source": "BD TOPO (IGN), Licence Ouverte 2.0 ; lignes de distribution © contributeurs OpenStreetMap, ODbL"
+  },
+  "eau": {
+   "objets": 310,
+   "classes": {
+    "gue": 10,
+    "pont": 100,
+    "source": 42,
+    "point_eau": 77,
+    "citerne": 45,
+    "reservoir": 36
+   },
+   "source": "BD TOPO (IGN), Licence Ouverte 2.0"
+  },
+  "pistes": {
+   "objets": 9708,
+   "classes": {
+    "chemin": 2924,
+    "sentier": 1664,
+    "route": 2306,
+    "empierree": 1603,
+    "dfci": 1191,
+    "prsf": 20
+   },
+   "source": "BD TOPO (IGN), Licence Ouverte 2.0 ; points de rencontre des secours en forêt : ONF, via la Géoplateforme"
+  }
+ }
+}

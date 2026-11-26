@@ -29,11 +29,23 @@ export function majCredits() {
     }
     // ODbL : les monuments et les éoliennes (vue3d/monuments.py, vue3d/eoliennes.py),
     // les repères d'un camp (interface/reperes.js).
+    // Les couches d'un camp (interface/couches-camp.js) : BD TOPO, déjà citée
+    // avec l'IGN ; INPN pour les zones protégées ; OSM pour les lignes de
+    // distribution, quand Overpass a répondu.
+    const camp = cite('couches-camp') || [];
     const osm = [monumentsActifs && MONUMENTS && 'Monuments 3D', cite('eoliennes') && 'éoliennes',
-        cite('reperes')].filter(Boolean);
+        cite('reperes'), ...camp.filter(c => /OpenStreetMap/.test(c.source)).map(c => c.nom.toLowerCase())].filter(Boolean);
     if (osm.length) {
         html += ` · ${osm.join(', ').replace(/^./, c => c.toUpperCase())} © <a href="https://www.openstreetmap.org/copyright"`
             + ' target="_blank" rel="noopener">contributeurs OpenStreetMap</a>, ODbL';
+    }
+    if (camp.some(c => /INPN/.test(c.source))) {
+        html += ' · Zones protégées : <a href="https://inpn.mnhn.fr/" target="_blank" rel="noopener">INPN</a>'
+            + ' (PatriNat : MNHN, OFB), Licence Ouverte 2.0';
+    }
+    if (camp.some(c => /ONF/.test(c.source))) html += ' · Points de rencontre des secours en forêt : ONF';
+    if (cite('meteo')) {
+        html += ' · Météo : <a href="https://open-meteo.com/" target="_blank" rel="noopener">Open-Meteo.com</a>, CC BY 4.0';
     }
     if (cite('panneaux')) {
         html += ' · Panneaux solaires © <a href="https://doi.org/10.5281/zenodo.19188878"'
