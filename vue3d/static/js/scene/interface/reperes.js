@@ -2,7 +2,8 @@
 // 35 km sans un nom ne se lit pas. Deux fichiers rangés à côté de la page par
 // horizon.yml : camp.geojson, le contour (zones/<camp>.geojson), et
 // reperes.geojson (outils/paquet_horizon.py reperes) : villages, lieux-dits,
-// sommets et routes départementales d'OpenStreetMap, à 5 km autour.
+// sommets et routes départementales d'OpenStreetMap ou de la BD TOPO, à 5 km
+// autour.
 //
 // Tout est posé sur ySolPartout, relu toutes les 2 s : l'horizon arrive tuile
 // après tuile, et un point posé avant la sienne resterait à 0 m.
@@ -195,14 +196,18 @@ async function poser() {
         bouton.className = 'toggle on';
         bouton.id = 't-reperes';
         bouton.textContent = 'Repères';
-        bouton.title = 'Pourtour du camp, villages, lieux-dits, sommets et routes départementales (OpenStreetMap)';
+        bouton.title = 'Pourtour du camp, villages, lieux-dits, sommets et routes départementales';
         bouton.addEventListener('click', () => {
             groupe.visible = bouton.classList.toggle('on');
             majCredits();
         });
         document.getElementById('t-horizon').after(bouton);
         groupe.visible = true;
-        citerSource('reperes', () => groupe.visible);
+        // Le contour vient d'OpenStreetMap ; les repères aussi, ou de la BD
+        // TOPO (déjà citée avec l'IGN) quand Overpass n'a pas répondu.
+        const osm = camp ? (reperes && /OpenStreetMap/.test(reperes.source || '') ? 'repères et pourtour du camp' : 'pourtour du camp')
+            : 'repères';
+        citerSource('reperes', () => groupe.visible && (camp || /OpenStreetMap/.test(reperes.source || '')) && osm);
         majCredits();
         reposer();
         setInterval(reposer, 2000);

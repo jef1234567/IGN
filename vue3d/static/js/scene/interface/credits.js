@@ -30,7 +30,7 @@ export function majCredits() {
     // ODbL : les monuments et les éoliennes (vue3d/monuments.py, vue3d/eoliennes.py),
     // les repères d'un camp (interface/reperes.js).
     const osm = [monumentsActifs && MONUMENTS && 'Monuments 3D', cite('eoliennes') && 'éoliennes',
-        cite('reperes') && 'repères et pourtour du camp'].filter(Boolean);
+        cite('reperes')].filter(Boolean);
     if (osm.length) {
         html += ` · ${osm.join(', ').replace(/^./, c => c.toUpperCase())} © <a href="https://www.openstreetmap.org/copyright"`
             + ' target="_blank" rel="noopener">contributeurs OpenStreetMap</a>, ODbL';

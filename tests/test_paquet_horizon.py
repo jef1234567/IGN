@@ -176,3 +176,31 @@ def test_reperes_sans_lieu_demande_au_miroir_suivant(monkeypatch):
     monkeypatch.setattr(ph.time, "sleep", lambda s: None)
     with pytest.raises(RuntimeError, match="aucun lieu"):
         ph.reperes_osm(box(6.0, 43.0, 6.2, 43.2), urls=("a",), tours=1)
+
+
+def test_reperes_bdtopo_au_format_osm():
+    autour = box(6.0, 43.0, 6.2, 43.2)
+    couches = {
+        "zone_d_habitation": [
+            {"properties": {"toponyme": "Comps-sur-Artuby", "importance": "3", "nature": "Lieu-dit habité"},
+             "geometry": {"type": "Polygon", "coordinates": [[[6.1, 43.1], [6.11, 43.1], [6.11, 43.11], [6.1, 43.1]]]}},
+            {"properties": {"toponyme": "Vieux", "importance": "4", "nature": "Ruines"},
+             "geometry": {"type": "Polygon", "coordinates": [[[6.1, 43.1], [6.11, 43.1], [6.11, 43.11], [6.1, 43.1]]]}}],
+        "lieu_dit_non_habite": [{"properties": {"toponyme": "le Planet"},
+                                 "geometry": {"type": "Point", "coordinates": [6.05, 43.05]}}],
+        "detail_orographique": [{"properties": {"toponyme": "Fayet", "nature": "Sommet"},
+                                 "geometry": {"type": "Point", "coordinates": [6.06, 43.06]}}],
+        "route_numerotee_ou_nommee": [
+            {"properties": {"type_de_route": "Départementale", "numero": "D955"},
+             "geometry": {"type": "MultiLineString", "coordinates": [[[5.9, 43.1], [6.3, 43.1]]]}},
+            {"properties": {"type_de_route": "Autoroute", "numero": "A8"},
+             "geometry": {"type": "LineString", "coordinates": [[6.0, 43.15], [6.2, 43.15]]}}],
+    }
+    zone = box(6.05, 43.05, 6.15, 43.15)
+    fc = ph.reperes_bdtopo(zone, lire=lambda couche, autour: couches[couche])
+    props = [f["properties"] for f in fc["features"]]
+    assert {"type": "village", "nom": "Comps-sur-Artuby"} in props
+    assert {"type": "locality", "nom": "le Planet"} in props
+    assert {"type": "sommet", "nom": "Fayet"} in props
+    assert all(p.get("nom") != "Vieux" for p in props)                      # ruines laissées
+    assert [p["ref"] for p in props if p["type"] == "route"] == ["D955"]     # pas l'autoroute

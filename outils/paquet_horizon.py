@@ -30,7 +30,8 @@ sont celles que lit `altitudesTuile` pour chacune : niveau z − 5 borné à
 dont le nom contient le texte donné, et écrit son contour en GeoJSON, avec
 son centre. Une zone peut aussi être donnée en « ouest,sud,est,nord ».
 `reperes` y ajoute, à 5 km autour, les villages, lieux-dits, sommets nommés et
-routes départementales d'OpenStreetMap, que la page affiche (`&vaste=1`).
+routes départementales d'OpenStreetMap, ou de la BD TOPO si Overpass ne répond
+pas en une minute, que la page affiche (`&vaste=1`).
 """
 
 import concurrent.futures as cf
@@ -70,7 +71,7 @@ ENTETES = {"User-Agent": "vue3d-paquet-horizon"}
 
 # --- Zone ----------------------------------------------------------------------
 
-def overpass(requete, traiter, urls=URLS_OVERPASS, tours=4):
+def overpass(requete, traiter, urls=URLS_OVERPASS, tours=4, delai=180):
     """`traiter(elements)` sur la réponse d'Overpass, de miroir en miroir.
 
     Une réponse vide n'est pas une preuve d'absence : le 24 novembre 2026, un
@@ -82,7 +83,7 @@ def overpass(requete, traiter, urls=URLS_OVERPASS, tours=4):
     for tour in range(tours):
         for url in urls:
             try:
-                r = requests.post(url, data={"data": requete}, headers=ENTETES, timeout=180)
+                r = requests.post(url, data={"data": requete}, headers=ENTETES, timeout=delai)
                 r.raise_for_status()
                 return traiter(r.json()["elements"])
             except (requests.RequestException, ValueError, KeyError) as e:
@@ -110,7 +111,7 @@ LIEUX = ("city", "town", "village", "hamlet", "isolated_dwelling", "locality")
 SIMPLIFIER_DEG = 0.0002
 
 
-def reperes_osm(zone, urls=URLS_OVERPASS, tours=4):
+def reperes_osm(zone, urls=URLS_OVERPASS, tours=4, delai=180):
     """Repères OSM autour de la zone, en GeoJSON (FeatureCollection)."""
     autour = elargir(zone, MARGE_REPERES_M)
     o, s, e, n = autour.bounds
@@ -125,7 +126,76 @@ def reperes_osm(zone, urls=URLS_OVERPASS, tours=4):
         if not any(f["properties"]["type"] != "route" for f in fc["features"]):
             raise ValueError("aucun lieu nommé dans la réponse")
         return fc
-    return overpass(requete, traiter, urls, tours)
+    return overpass(requete, traiter, urls, tours, delai)
+
+
+# La BD TOPO, quand Overpass ne répond pas (les trois miroirs muets pendant
+# 28 min le 26 novembre 2026, 11 h 30), et plus fournie que lui sur un camp :
+# 15 lieux-dits nommés sur 4 km² autour de Canjuers-centre.
+URL_WFS = "https://data.geopf.fr/wfs/ows"
+PAGE_WFS = 1000
+GENRE_HABITATION = {"1": "town", "2": "town", "3": "village", "4": "hamlet"}
+ROUTES_GARDEES = ("Départementale", "Nationale")
+
+
+def wfs(couche, autour, essais=6):
+    """Les objets BD TOPO d'une couche dans l'emprise de `autour`, page à page."""
+    o, s, e, n = autour.bounds
+    objets, debut = [], 0
+    while True:
+        url = (f"{URL_WFS}?SERVICE=WFS&VERSION=2.0.0&REQUEST=GetFeature&TYPENAMES=BDTOPO_V3:{couche}"
+               f"&OUTPUTFORMAT=application/json&SRSNAME=EPSG:4326&COUNT={PAGE_WFS}&STARTINDEX={debut}"
+               f"&BBOX={s},{o},{n},{e},urn:ogc:def:crs:EPSG::4326")
+        for essai in range(essais):
+            try:
+                r = requests.get(url, headers=ENTETES, timeout=120)
+                r.raise_for_status()
+                page = r.json()["features"]
+                break
+            except (requests.RequestException, ValueError, KeyError):
+                # Les refus de la Géoplateforme sont sporadiques (CLAUDE.md).
+                if essai == essais - 1:
+                    raise
+                time.sleep(2 * (essai + 1))
+        objets += page
+        if len(page) < PAGE_WFS:
+            return objets
+        debut += PAGE_WFS
+
+
+def reperes_bdtopo(zone, lire=wfs):
+    """Repères de la BD TOPO autour de la zone, au format de reperes_osm."""
+    autour = elargir(zone, MARGE_REPERES_M)
+    elements = []
+    for f in lire("zone_d_habitation", autour):
+        p = f["properties"]
+        if p.get("toponyme") and p.get("nature") != "Ruines":
+            c = shape(f["geometry"]).representative_point()
+            elements.append({"type": "node", "lon": c.x, "lat": c.y, "tags": {
+                "place": GENRE_HABITATION.get(str(p.get("importance")), "isolated_dwelling"), "name": p["toponyme"]}})
+    for f in lire("lieu_dit_non_habite", autour):
+        p = f["properties"]
+        if p.get("toponyme"):
+            x, y = f["geometry"]["coordinates"][:2]
+            elements.append({"type": "node", "lon": x, "lat": y, "tags": {"place": "locality", "name": p["toponyme"]}})
+    for f in lire("detail_orographique", autour):
+        p = f["properties"]
+        if p.get("toponyme") and p.get("nature") in ("Sommet", "Col") and f["geometry"]["type"] == "Point":
+            x, y = f["geometry"]["coordinates"][:2]
+            tags = {"natural": "peak", "name": p["toponyme"]} if p["nature"] == "Sommet" \
+                else {"place": "locality", "name": p["toponyme"]}
+            elements.append({"type": "node", "lon": x, "lat": y, "tags": tags})
+    for f in lire("route_numerotee_ou_nommee", autour):
+        p = f["properties"]
+        if p.get("type_de_route") in ROUTES_GARDEES and p.get("numero"):
+            g = f["geometry"]
+            parties = [g["coordinates"]] if g["type"] == "LineString" else g["coordinates"]
+            for partie in parties:
+                elements.append({"type": "way", "tags": {"ref": p["numero"]},
+                                 "geometry": [{"lon": c[0], "lat": c[1]} for c in partie]})
+    fc = reperes_depuis(elements, autour)
+    fc["source"] = "BD TOPO (IGN), Licence Ouverte 2.0"
+    return fc
 
 
 def reperes_depuis(elements, autour):
@@ -331,8 +401,13 @@ def main(argv):
         print(f"CENTRE={c.y:.5f},{c.x:.5f}")
         return 0
     if len(args) == 3 and args[0] == "reperes":
-        fc = reperes_osm(lire_zone(args[1]))
-        fc["licence"] = "© contributeurs OpenStreetMap, ODbL"
+        zone = lire_zone(args[1])
+        try:
+            fc = reperes_osm(zone, tours=1, delai=60)
+            fc["source"] = "© contributeurs OpenStreetMap, ODbL"
+        except RuntimeError as e:
+            print(f"Overpass sans réponse, BD TOPO à la place ({str(e).splitlines()[0]})", file=sys.stderr)
+            fc = reperes_bdtopo(zone)
         with open(args[2], "w", encoding="utf-8") as f:
             json.dump(fc, f, ensure_ascii=False, separators=(",", ":"))
         genres = {}
