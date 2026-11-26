@@ -199,7 +199,7 @@ def test_reperes_bdtopo_au_format_osm():
     zone = box(6.05, 43.05, 6.15, 43.15)
     fc = ph.reperes_bdtopo(zone, lire=lambda couche, autour: couches[couche])
     props = [f["properties"] for f in fc["features"]]
-    assert {"type": "village", "nom": "Comps-sur-Artuby"} in props
+    assert {"type": "hamlet", "nom": "Comps-sur-Artuby"} in props
     assert {"type": "locality", "nom": "le Planet"} in props
     assert {"type": "sommet", "nom": "Fayet"} in props
     assert all(p.get("nom") != "Vieux" for p in props)                      # ruines laissées

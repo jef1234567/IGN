@@ -64,6 +64,16 @@ messages de commit et dans les commentaires des modules.
   débattement, et la ligne de vue dit « je peux le traiter » ou non. Décocher
   « Ligne de vue » efface la ligne tracée.
 
+- **Le pourtour et les repères d'un camp** (26 novembre 2026) : en
+  navigation sur tout un camp (`&vaste=1`), le contour du camp est tracé en
+  rouge sur le relief, et un bouton « Repères » montre les communes, hameaux,
+  lieux-dits, sommets et routes départementales à 5 km autour, chacun à
+  partir d'une distance (communes de partout, lieux-dits à moins de 7 km).
+  `outils/paquet_horizon.py reperes` les lit dans OpenStreetMap, ou dans la
+  BD TOPO si Overpass ne répond pas en une minute ; ceux de Canjuers sont
+  gardés dans `zones/canjuers-reperes.geojson` (BD TOPO : Overpass muet le
+  26 novembre, 27 communes, 145 hameaux, 569 lieux-dits, 72 sommets,
+  33 routes).
 - **Une ancienne adresse ne montre plus « Scène indisponible »** (26 novembre
   2026) : dans un dossier figé (CENZUB, un camp), le service worker renvoie à
   l'entrée une page ouverte sur un point que le dossier n'a pas enregistré

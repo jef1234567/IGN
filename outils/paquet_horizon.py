@@ -134,7 +134,10 @@ def reperes_osm(zone, urls=URLS_OVERPASS, tours=4, delai=180):
 # 15 lieux-dits nommés sur 4 km² autour de Canjuers-centre.
 URL_WFS = "https://data.geopf.fr/wfs/ows"
 PAGE_WFS = 1000
-GENRE_HABITATION = {"1": "town", "2": "town", "3": "village", "4": "hamlet"}
+# Importance 1 et 2 : les communes (Comps-sur-Artuby, Trigance, Bargème…, 27
+# autour de Canjuers) ; 3 : les quartiers et grosses fermes (145) ; 4 et au-delà :
+# les écarts. Mesuré le 26 novembre 2026 sur le camp élargi de 5 km.
+GENRE_HABITATION = {"1": "village", "2": "village", "3": "hamlet"}
 ROUTES_GARDEES = ("Départementale", "Nationale")
 
 
