@@ -15,6 +15,14 @@ messages de commit et dans les commentaires des modules.
 
 ### Ajouté
 
+- **Préparation de mission : débattements sourcés, poste sur un toit** (26
+  novembre 2026). Les débattements en site viennent de sources ouvertes,
+  citées dans `interface/mission.js` : Leclerc −8° à +20° (−142 à +356 ‰),
+  VBCI −8° à +45° (−142 à +800 ‰), Jaguar −10° à +45° (−178 à +800 ‰),
+  Griffon, tourelleau T1, −20° à +60° (−356 à +1 067 ‰) ; le MMP reste sans
+  limite, faute de source. Un clic sur un toit pose bien le poste dessus :
+  les toits dont la normale est tournée vers le bas passaient pour des
+  façades et le poste était refusé.
 - **Préparation de mission : plusieurs postes, étages, débattement** (26
   novembre 2026). Jusqu'à quatre postes, nommés et colorés, que la carte
   réunit (case « tous les postes ») ou montre un à un ; « Déplacer » change
