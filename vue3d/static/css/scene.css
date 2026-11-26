@@ -294,6 +294,17 @@ html.tiroir #credits { left:12px; max-width:none; }
 #mi-postes .toggle b { font-weight:400; opacity:.7; padding-left:2px; }
 #sec-mission input[type=checkbox] { accent-color:var(--accent); margin:0; }
 #mi-profil[hidden] { display:none; }
+#sec-brechage select, #sec-brechage input[type=number] { background:var(--panel-soft); color:var(--text);
+    border:1px solid var(--line, #333); border-radius:4px; padding:3px 4px; font:inherit; font-size:12px; }
+#sec-brechage select { flex:1; min-width:0; }
+#sec-brechage input[type=number] { width:60px; }
+#sec-brechage .mi-u { font-size:10px; color:var(--muted); }
+#sec-brechage .toggle:disabled { opacity:.45; cursor:default; }
+#sec-brechage input[type=checkbox] { accent-color:var(--accent); margin:0 4px 0 0; }
+.br-types label { display:inline-flex; align-items:center; margin-right:10px; font-size:12px; }
+.br-titre { font-size:11px; margin:10px 0 4px; text-transform:uppercase; letter-spacing:.04em; }
+.br-titre.def { color:#e5534b; } .br-titre.att { color:#2f80ed; }
+.br-detail { font-size:11px; color:var(--muted); margin:-2px 0 6px; }
 #mi-profil { display:block; width:100%; height:110px; margin-top:8px; background:var(--panel-soft); border-radius:4px; }
 #mi-resultat .vu { color:#4cc26b; } #mi-resultat .masque { color:#e5534b; } #mi-resultat .hors { color:#f2994a; }
 #mi-legende { position:absolute; left:12px; bottom:12px; z-index:5; background:rgba(20,23,28,.85); color:#e6e6e6;

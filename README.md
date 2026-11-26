@@ -27,6 +27,7 @@ Section « Préparation de mission » du panneau de la vue 3D, pour le chef qui 
 - **Ce que je vois** : le terrain où un ennemi de la hauteur choisie est vu (vert) ou masqué (rouge), jusqu'à la portée saisie. **Qui me voit** : le terrain d'où un ennemi voit mon poste (rouge).
 - **Vue du poste** : la caméra à l'optique ; glisser pour tourner, molette pour grossir (jumelles), Échap pour sortir. Un clic y vise un point.
 - **Mesurer** : deux clics, distance, azimut vrai et au carroyage en millièmes (6 400), dénivelé et pente, coordonnées MGRS et altitude des deux points.
+- **Bréchage** : trace l'obstacle (barbelés, mines, merlon), clique le côté ami, puis « Chercher les positions ». Les marques D1 à D5 donnent les meilleures positions du défenseur : derrière l'obstacle, elles le voient le mieux en restant cachées des abords. Les marques A1 à A5 donnent les meilleures positions d'appui du bréchage : elles voient l'obstacle dans le débattement de l'arme et les positions D. Le calcul se fait sur ce qui est affiché. Sur un camp montré en relief et photo seuls, sans bâti ni arbres, les vues sont donc optimistes.
 
 Le calcul porte sur ce que la scène affiche : relief, bâtiments, et végétation si elle est allumée (l'éteindre revient à voir à travers). Il demande l'exagération Z à 1. La végétation est celle du LiDAR, sans saison ; une haie basse ou un arbre isolé masquent comme un mur.
 

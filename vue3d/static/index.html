@@ -151,6 +151,37 @@
             <div class="note" id="mi-note">Pose un poste sur le terrain ou sur un bâtiment, puis demande ce qu'il voit. Hauteurs et débattements : ordres de grandeur, à corriger.</div>
         </div>
 
+        <div class="section" id="sec-brechage">
+            <h2>Bréchage</h2>
+            <div class="toggles">
+                <button class="toggle" id="br-tracer" title="Cliquer les points de l'obstacle sur le terrain, puis ce bouton à nouveau pour finir">Tracer l'obstacle</button>
+                <button class="toggle" id="br-cote" disabled title="Cliquer du côté d'où vient l'attaquant">Côté ami</button>
+                <button class="toggle" id="br-effacer" disabled>Effacer</button>
+            </div>
+            <div class="row br-types">
+                <label><input type="checkbox" id="br-barbeles" checked /> barbelés</label>
+                <label><input type="checkbox" id="br-mines" /> mines</label>
+                <label title="2 m de haut : il masque ce qui est derrière lui"><input type="checkbox" id="br-merlon" /> merlon</label>
+            </div>
+            <div class="row">
+                <label for="br-type-def">défenseur</label>
+                <select id="br-type-def"></select>
+            </div>
+            <div class="row">
+                <label for="br-type-att">appui</label>
+                <select id="br-type-att"></select>
+            </div>
+            <div class="row">
+                <label for="br-portee" title="Les positions sont cherchées à moins de cette distance de l'obstacle (3 000 m au plus)">portée</label>
+                <input type="number" id="br-portee" min="200" max="3000" step="100" value="1500" /> <span class="mi-u">m</span>
+            </div>
+            <div class="toggles" style="margin-top:8px">
+                <button class="toggle" id="br-chercher" disabled title="Les cinq meilleures positions de chaque côté, sur ce qui est affiché">Chercher les positions</button>
+            </div>
+            <div id="br-resultat"></div>
+            <div class="note" id="br-note">Trace l'obstacle, indique le côté ami, puis cherche : où le défenseur le voit le mieux en restant caché des abords, d'où l'attaquant peut appuyer le bréchage.</div>
+        </div>
+
         <div class="section" id="sec-moi" hidden>
             <h2>Ma position</h2>
             <div class="stat"><span>précision</span><b id="m-prec">—</b></div>
