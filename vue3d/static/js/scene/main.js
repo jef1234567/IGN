@@ -60,7 +60,6 @@ import './interface/tuto.js';
 import './interface/gestes.js';
 import './terrain/commandes.js';
 import './interface/soleil.js';
-import './couches/scenario.js';
 import './interface/reliefcalcul.js';
 import './interface/mission.js';
 import './interface/brechage.js';

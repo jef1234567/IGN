@@ -19,9 +19,6 @@ on:
       point:
         description: "Scène détaillée ?lat=…&lon=…&zone=… (vide : au centre du camp, 150 m, la plus petite : relief et photo aérienne partout)"
         default: ""
-      scenario:
-        description: "Tableur de scénario dans le dépôt (vide : aucun)"
-        default: ""
       publier:
         description: "Publier aussi en ligne, à côté de CENZUB (GitHub Pages, 1 Go au plus : zoom 17 conseillé)"
         type: boolean
@@ -47,7 +44,7 @@ jobs:
         with: { node-version: '20' }
       - name: Dépendances
         run: |
-          pip install -r requirements.txt openpyxl
+          pip install -r requirements.txt
           npm install --no-save puppeteer-core@23
       - name: Zone du camp
         env:
@@ -92,13 +89,6 @@ jobs:
           mkdir -p cache
           VUE3D_CACHE=./cache VUE3D_QUOTA=1000 nohup flask --app vue3d.app run --port 8080 > serveur.log 2>&1 &
           for i in $(seq 1 30); do curl -sf http://localhost:8080/api/sante >/dev/null && break; sleep 2; done
-      - name: Scénario
-        if: ${{ inputs.scenario }}
-        env:
-          TABLEUR: ${{ inputs.scenario }}
-        run: |
-          python outils/scenario.py "$TABLEUR" scenario.json --centre "$CENTRE" --rayon 40000
-          echo "SCENARIO=scenario.json" >> "$GITHUB_ENV"
       - name: Construction et enregistrement de la scène
         env:
           HORIZON: ${{ inputs.zoom_max || '18' }}

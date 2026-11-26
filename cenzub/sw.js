@@ -32,7 +32,7 @@ function fichierTuile(cle) {
 // indisponible » : renvoyée à l'entrée, relue sans cache, qui porte le point
 // du dossier. Seulement si le dossier a une scène, sans quoi elle bouclerait.
 async function naviguer(requete, cle) {
-  const page = /^(app|editeur)\.html\?/.exec(cle);
+  const page = /^app\.html\?/.exec(cle);
   if (page) {
     const p = new URL(requete.url).searchParams;
     // Relu à chaque ouverture : un service worker resté en vie pendant une
