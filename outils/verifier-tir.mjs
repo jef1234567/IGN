@@ -6,7 +6,7 @@
 //   node outils/verifier-tir.mjs
 import {
     ARMES, BANDES, EP_EN_SIGMA, ELLIPSE_50_EN_EP, epDecole, horsDePortee,
-    tirerCoups, dansEllipse50, parBandes, versScene,
+    tirerCoups, dansEllipse50, parBandes, versScene, trajectoire, pointDeChute, allongement,
 } from '../vue3d/static/js/commun/tir.js';
 
 let echecs = 0;
@@ -44,6 +44,35 @@ verifier(horsDePortee(caesar, 3000) && !horsDePortee(caesar, 20000) && horsDePor
 verifier(!horsDePortee(mo81, 2000) && horsDePortee(mo81, 6000), 'mortier 81 : jusqu’à 5,6 km');
 const ep = epDecole(caesar, 6000);
 verifier(ep.portee === 15 && ep.direction === 4, `CAESAR à 6 km : EP ${ep.portee} m et ${ep.direction} m (exemple du FM 6-40 : 15 et 4)`);
+
+// La trajectoire stylisée arrive au point voulu, avec l'angle voulu.
+{
+    const h = trajectoire(1000, 40, 65), e = 1e-3;
+    verifier(proche(h(1000), 40, 1e-9) && proche((h(1000 + e) - h(1000 - e)) / (2 * e), -Math.tan(65 * Math.PI / 180), 1e-6),
+        'trajectoire : arrivée à 1 000 m, 40 m plus haut, chute de 65°');
+}
+// La pente : sur un versant plan qui passe par l'objectif (plaine au niveau
+// de la pièce jusqu'à 200 m avant), la dispersion mesurée au sol doit
+// s'allonger comme le dit la formule du document de conception, à la
+// courbure de la parabole près.
+for (const [chute, alpha, D] of [[30, 15, 3000], [70, 15, 1000], [30, -15, 3000], [65, 20, 1500]]) {
+    const ta = Math.tan(alpha * Math.PI / 180);
+    const sol = s => (s < D - 200 ? 0 : -ta * (s - D));
+    const ecarts = [-40, -20, 20, 40];
+    const chutes = ecarts.map(p => pointDeChute(D + p, 0, chute, s => sol(s), 1).s - D);
+    const mesure = (chutes[3] - chutes[0]) / (ecarts[3] - ecarts[0]), attendu = allongement(chute, alpha);
+    verifier(proche(mesure, attendu, 0.03 * attendu), `pente ${alpha}°, chute ${chute}° : ×${mesure.toFixed(3)} mesuré, ×${attendu.toFixed(3)} par la formule`);
+}
+verifier(proche(allongement(30, 15), 1.866, 1e-3) && proche(allongement(30, -15), 0.683, 1e-3)
+    && proche(allongement(70, 15), 1.108, 1e-3) && proche(allongement(70, -15), 0.911, 1e-3),
+    'exemples du document : ×1,87 et ×0,68 à 30°, ×1,11 et ×0,91 à 70°');
+verifier(allongement(30, 30) === null && allongement(30, 40) === null, 'versant plus raide que la chute : angle mort');
+// Une crête de 250 m à mi-chemin (un tir tendu à 10° culmine à D tan 10° / 4 = 176 m) arrête un tir tendu, pas un tir courbe.
+{
+    const D = 4000, crete = s => (Math.abs(s - 2000) < 50 ? 250 : 0);
+    const tendu = pointDeChute(D, 0, 10, crete, 2), courbe = pointDeChute(D, 0, 65, crete, 2);
+    verifier(tendu.s < 2100 && proche(courbe.s, D, 1), `crête à mi-chemin : tir tendu arrêté à ${tendu.s.toFixed(0)} m, tir courbe à ${courbe.s.toFixed(0)} m`);
+}
 
 if (echecs) { console.log(`${echecs} échec(s)`); process.exit(1); }
 console.log('tout est bon');

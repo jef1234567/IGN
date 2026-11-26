@@ -34,20 +34,24 @@ export const BANDES = [25, 16, 7, 2];
 export const ARMES = [
     {
         id: 'mo81', nom: 'Mortier 81 mm', porteeMin: 0, porteeMax: 5600,
-        epPortee: 0.01, epDirection: 0.004, angleChute: 65,
+        epPortee: 0.01, epDirection: 0.004, chutes: { courbe: 65 },
         source: 'Portée : Wikipédia, « LLR 81mm » (5 600 m avec munition spéciale, 3 100 m avec l’obus de 1944). EP : valeurs d’école.',
     },
     {
         id: 'mo120', nom: 'Mortier 120 mm', porteeMin: 0, porteeMax: 8200,
-        epPortee: 0.01, epDirection: 0.004, angleChute: 65,
+        epPortee: 0.01, epDirection: 0.004, chutes: { courbe: 65 },
         source: 'Portée : Wikipédia, « MO-120-RT » (8,2 km, 13 km avec obus propulsé). EP : valeurs d’école.',
     },
     {
         id: 'caesar', nom: 'CAESAR 155 mm', porteeMin: 4500, porteeMax: 40000,
-        epPortee: 0.0025, epDirection: 0.0007, angleChute: 35,
+        epPortee: 0.0025, epDirection: 0.0007, chutes: { tendue: 35, courbe: 65 },
         source: 'Portée : Wikipédia, « CAESAR » (4,5 à 40 km, obus ERFB). EP : ordre de grandeur de l’exemple du FM 6-40 (155 mm à 6 000 m).',
     },
 ];
+
+// Angles de chute (degrés), valeurs d'école : un mortier ne tire que courbe,
+// au-dessus de 45° ; un canon tire tendu (trajectoire basse) ou courbe.
+export const TRAJECTOIRES = { tendue: 'tendue', courbe: 'courbe' };
 
 // Sous 3 m, un EP ne se voit plus sur la carte ; c'est un plancher d'affichage.
 export const EP_MIN = 3;
@@ -126,4 +130,73 @@ export function contourEllipse(a, b, n = 72) {
         pts.push({ portee: a * Math.cos(t), direction: b * Math.sin(t) });
     }
     return pts;
+}
+
+// --- Le relief (lot 2) -----------------------------------------------------------------
+// La trajectoire est stylisée : une parabole dans le plan vertical du tir, qui
+// part de la pièce et arrive au niveau de l'objectif avec l'angle de chute
+// donné. Elle ne sert qu'à deux choses : savoir où chaque coup rencontre le
+// sol vrai (une contre-pente allonge la zone de chute, une pente face au
+// tireur la raccourcit), et si une crête l'arrête avant (angle mort). Ce
+// n'est pas une trajectoire balistique : ni frottement de l'air, ni flèche
+// réelle, et l'angle de chute est une valeur d'école.
+
+const RAD = Math.PI / 180;
+
+/**
+ * La hauteur de la trajectoire au-dessus de la pièce à la distance s, pour
+ * un point d'arrivée à D m et dy m au-dessus de la pièce, angle de chute
+ * `chute` (degrés) : h(s) = a s + b s², h(D) = dy, h'(D) = −tan(chute).
+ */
+export function trajectoire(D, dy, chute) {
+    const t = Math.tan(chute * RAD);
+    const b = -(dy + D * t) / (D * D), a = -t - 2 * b * D;
+    return s => a * s + b * s * s;
+}
+
+/**
+ * Où la trajectoire rencontre le sol : `sol(s)` donne la hauteur du sol au-
+ * dessus de la pièce à la distance s (null hors du relief chargé). On avance
+ * pas à pas depuis la bouche, puis on resserre par dichotomie. Rend
+ * { s, h }, ou null si le relief manque avant la rencontre.
+ */
+export function pointDeChute(D, dy, chute, sol, pas) {
+    const h = trajectoire(D, dy, chute);
+    // Les premiers mètres sont ignorés : le coup part de la pièce, posée au sol.
+    let s0 = Math.min(10, D / 4), fin = 2 * D + 500;
+    let g0 = sol(s0);
+    if (g0 == null) return null;
+    for (let s = s0 + pas; s <= fin; s += pas) {
+        const g = sol(s);
+        if (g == null) return null;
+        if (h(s) <= g) {
+            let lo = s0, hi = s;
+            for (let k = 0; k < 30; k++) {
+                const m = (lo + hi) / 2, gm = sol(m);
+                if (gm != null && h(m) <= gm) hi = m; else lo = m;
+            }
+            return { s: hi, h: h(hi) };
+        }
+        s0 = s;
+    }
+    return null;
+}
+
+/**
+ * L'allongement de la zone de chute sur une pente α (degrés) dans l'axe du
+ * tir, pour un angle de chute ω : tan ω / (tan ω − tan α). α > 0 : le sol
+ * descend en s'éloignant de la pièce (contre-pente), la zone s'allonge ;
+ * α < 0 : il monte vers l'objectif (pente face au tireur), elle raccourcit.
+ * null si α ≥ ω : le coup ne peut plus toucher ce versant, c'est un angle mort.
+ */
+export function allongement(chute, alpha) {
+    if (alpha >= chute) return null;
+    const t = Math.tan(chute * RAD);
+    return t / (t - Math.tan(alpha * RAD));
+}
+
+/** L'écart-type d'une liste de nombres. */
+export function ecartType(v) {
+    const m = v.reduce((a, x) => a + x, 0) / v.length;
+    return Math.sqrt(v.reduce((a, x) => a + (x - m) ** 2, 0) / v.length);
 }
