@@ -227,15 +227,8 @@ def blueprint(cache, construire, quota, avis, quota_avis):
     @bp.get("/")
     @bp.get("/app.html")
     def page():
-        # /app.html : le nom de la page sur le site figé (cenzub/figer.mjs),
-        # où mène le bouton « Voir en 3D » de l'éditeur de scénario.
+        # /app.html : le nom de la page sur le site figé (cenzub/figer.mjs).
         return send_from_directory(current_app.static_folder, "index.html")
-
-    @bp.get("/editeur.html")
-    def editeur():
-        """L'éditeur de scénario, à la racine comme sur le site figé : ses
-        adresses relatives (api/ortho, scenario.json) y sont les mêmes."""
-        return send_from_directory(current_app.static_folder, "editeur.html")
 
     @bp.get("/api/scene")
     def scene():

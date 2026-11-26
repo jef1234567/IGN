@@ -5,8 +5,6 @@ CENZUB – Jeoffrécourt en 3D (version hors réseau)
    Le navigateur s'ouvre sur http://localhost:8080/
    (si PowerShell refuse le script : powershell -ExecutionPolicy Bypass -File servir.ps1)
 3. Ne pas ouvrir index.html par double-clic : le navigateur bloque alors la scène.
-4. Changer de scénario : remplacer scenario.json dans ce dossier (converti par
-   outils/scenario.py depuis le tableur), puis recharger la page.
 
 Données © IGN (Licence Ouverte Etalab 2.0) ; monuments © contributeurs OpenStreetMap (ODbL).
 Outil : Vue 3D IGN, Yannick Simon, licence MIT – https://github.com/ysimonx/vue-3d-ign

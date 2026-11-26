@@ -72,8 +72,6 @@
                 <button class="toggle on" id="t-piscines" hidden title="Piscines vues sur l'orthophoto">Piscines</button>
                 <button class="toggle on" id="t-navires" hidden title="Bateaux vus sur l'orthophoto, sur l'eau">Bateaux</button>
                 <button class="toggle on" id="t-panneaux" hidden title="Panneaux solaires du registre OpenPVMapper">Panneaux solaires</button>
-                <button class="toggle" id="t-scenario" hidden title="Le scénario chargé : sa frise et ses effets (fumigènes, unités)">Scénario</button>
-                <a class="toggle" id="lien-editeur" href="editeur.html" title="Placer fumigènes, jalons et unités sur la carte de la scène, au fil du temps">Éditeur de scénario</a>
             </div>
             <div class="row">
                 <label for="speed" title="Orbite : degrés par seconde. Drone : vitesse de pointe, 3 m/s par cran.">vitesse</label>
@@ -228,13 +226,6 @@
                 </div>
             </div>
             <div class="section">
-                <h2>Soleil</h2>
-                <div class="stat"><span>date</span><b id="s-date">—</b></div>
-                <div class="stat"><span>azimut</span><b id="s-azimut">—</b></div>
-                <div class="stat"><span>hauteur</span><b id="s-hauteur">—</b></div>
-                <div class="note" id="note-soleil"></div>
-            </div>
-            <div class="section">
                 <h2>Export BIM</h2>
                 <div class="toggles">
                     <button class="toggle on" id="x-relief">Relief</button>
@@ -252,6 +243,18 @@
                     OSM), à l'échelle, en Lambert-93 et altitudes NGF. Une maquette de
                     contexte, pas un relevé.
                 </div>
+            </div>
+        </details>
+        <!-- Mesures du panneau retirées de la vue le 26 novembre 2026 (inutiles
+             à l'entraînement) : gardées cachées, car les modules y écrivent et
+             outils/essai-navigateur.mjs y lit l'état du chargement. -->
+        <div id="mesures" hidden>
+            <div class="section">
+                <h2>Soleil</h2>
+                <div class="stat"><span>date</span><b id="s-date">—</b></div>
+                <div class="stat"><span>azimut</span><b id="s-azimut">—</b></div>
+                <div class="stat"><span>hauteur</span><b id="s-hauteur">—</b></div>
+                <div class="note" id="note-soleil"></div>
             </div>
             <div class="section">
                 <h2>Bâtiments</h2>
@@ -277,7 +280,7 @@
                 <div class="stat"><span>obstacle dominant</span><b id="v-obstacle">—</b></div>
                 <div class="note" id="v-note">Chargement…</div>
             </div>
-        </details>
+        </div>
     </div>
 
     <div id="voile"></div>
@@ -297,7 +300,6 @@
             <div id="etat-roofer" class="etat-couche" role="status" hidden><i class="roue"></i><span></span></div>
             <div id="etat-partage" class="etat-couche" role="status" hidden><i class="roue"></i><span></span></div>
             <div id="etat-moi" class="etat-couche" role="status" hidden><i class="roue"></i><span></span></div>
-            <div id="etat-scenario" class="etat-couche" role="status" hidden><i class="roue"></i><span></span></div>
             <div id="conseil-veg" class="etat-couche conseil" role="status" hidden>
                 <span></span>
                 <button type="button" class="agir">Masquer la végétation</button>
@@ -305,23 +307,6 @@
             </div>
         </div>
         <div id="attente" hidden></div>
-        <div id="frise" hidden>
-            <div class="ligne">
-                <button type="button" id="frise-lecture" aria-label="Lecture">▶</button>
-                <b id="frise-heure">—</b>
-                <select id="frise-vitesse" aria-label="Vitesse de lecture" title="Vitesse de lecture">
-                    <option value="1">×1</option>
-                    <option value="10" selected>×10</option>
-                    <option value="60">×60</option>
-                </select>
-                <span id="frise-titre"></span>
-                <button type="button" id="frise-masquer" aria-label="Masquer le scénario" title="Masquer le scénario (le bouton Scénario du tiroir le réaffiche)">✕</button>
-            </div>
-            <div class="piste">
-                <div id="frise-reperes"></div>
-                <input type="range" id="frise-curseur" min="0" max="1" step="1" value="0" aria-label="Temps du scénario">
-            </div>
-        </div>
         <div id="boussole" title="Orientation">
             <div class="rose" id="rose">
                 <div class="aiguille"></div>
@@ -545,8 +530,6 @@
   }
 }
 </script>
-<!-- Symboles APP-6 des unités du scénario (milsymbol, MIT) : window.ms. -->
-<script src="static/js/vendor/milsymbol.js"></script>
 <script type="module" src="static/js/scene/main.js"></script>
 </body>
 </html>

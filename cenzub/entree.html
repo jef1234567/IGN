@@ -32,9 +32,9 @@
     try { await Promise.race([installer, new Promise(r => setTimeout(r, 5000))]); }
     catch (e) { /* la page se passera du service worker */ }
   }
-  // ?vers= : la page à rouvrir, avec ses paramètres (app.html par défaut).
+  // ?vers= (ancien choix entre la scène et l'éditeur) : retiré, la scène seule.
   const ici = new URLSearchParams(location.search);
-  const vers = ['app.html', 'editeur.html'].includes(ici.get('vers')) ? ici.get('vers') : 'app.html';
+  const vers = 'app.html';
   ici.delete('vers');
   const q = ici.toString();
   location.replace(vers + (q ? '?' + q : '__POINT__'));

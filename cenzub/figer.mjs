@@ -3,11 +3,9 @@
 // Ouvre la page du serveur local dans Chrome, enregistre toutes les réponses
 // reçues (API du serveur, three.js, tuiles et relief de l'IGN), puis écrit :
 //   site/app.html            la page de la scène (vue3d/static/index.html)
-//   site/editeur.html        l'éditeur de scénario (vue3d/static/editeur.html)
 //   site/static/...          ses scripts et styles
 //   site/data/<hash>         chaque réponse enregistrée
 //   site/manifeste.json      adresse demandée -> [fichier, type]
-//   site/scenario.json       le scénario, si SCENARIO le donne (cherché toujours)
 //   site/sw.js, index.html   le service worker qui rejoue les réponses, et
 //                            la page d'entrée qui l'installe
 //
@@ -110,23 +108,17 @@ await navigateur.close();
 
 // La page et ses fichiers.
 fs.cpSync('vue3d/static', path.join(sortie, 'static'), { recursive: true });
-// Les deux pages lisent la scène par le service worker. Sans lui (lien
+// La page lit la scène par le service worker. Sans lui (lien
 // partagé ouvert une première fois, navigateur intégré à une messagerie),
 // sans-sw.js, chargé avant tout, dirige leurs demandes vers data/.
 const enTete = '<head>\n<script src="sans-sw.js"></script>';
-for (const [source, nom] of [['index.html', 'app.html'], ['editeur.html', 'editeur.html']]) {
+for (const [source, nom] of [['index.html', 'app.html']]) {
   const html = fs.readFileSync(path.join('vue3d/static', source), 'utf8');
   if (!html.includes('<head>')) throw new Error(`${source} : pas de <head>`);
   fs.writeFileSync(path.join(sortie, nom), html.replace("<head>", enTete));
 }
 fs.copyFileSync(path.join(ICI, 'sw.js'), path.join(sortie, 'sw.js'));
 fs.copyFileSync(path.join(ICI, 'sans-sw.js'), path.join(sortie, 'sans-sw.js'));
-// Le calque scénario (SCENARIO : le scenario.json converti par
-// outils/scenario.py) : copié à côté de la page. La page le cherche toujours,
-// pour qu'on le change sans refiger la scène : remplacé dans le dossier hors
-// réseau, ou republié par le workflow scenario.yml.
-const scenario = process.env.SCENARIO;
-if (scenario) fs.copyFileSync(scenario, path.join(sortie, 'scenario.json'));
 // HORIZON=18 (ou 16, 15) : l'horizon s'arrête à ce zoom, celui du paquet de
 // tuiles (outils/paquet_horizon.py --zoom-max N) rangé ensuite dans le dossier.
 // VASTE=1 : la navigation sur tout un camp (interface/vaste.js), relief et
@@ -134,7 +126,7 @@ if (scenario) fs.copyFileSync(scenario, path.join(sortie, 'scenario.json'));
 const ici = new URL(url).searchParams;
 const vaste = '&vaste=1&couches=-vegetation,-eau,-routes,-lignes,-ouvrages,-constructions,-eoliennes'
   + `&vue=${ici.get('lat')},${ici.get('lon')},0,15000,180,40`;
-const point = new URL(url).search + (avecRoofer ? '&roofer=1' : '') + '&scenario=scenario.json'
+const point = new URL(url).search + (avecRoofer ? '&roofer=1' : '')
   + (['15', '16', '18'].includes(process.env.HORIZON) ? '&horizon=' + process.env.HORIZON : '')
   + (process.env.VASTE === '1' ? vaste : '');
 fs.writeFileSync(path.join(sortie, 'index.html'),

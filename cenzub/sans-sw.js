@@ -1,7 +1,7 @@
 // Le site figé sans service worker aux commandes : un lien partagé ouvert
 // pour la première fois, ou un navigateur qui n'en a pas (celui intégré à une
 // messagerie). La scène répondait alors 404 (vu le 25 novembre 2026). Ce
-// script, chargé avant tout dans app.html et editeur.html, lit le manifeste
+// script, chargé avant tout dans app.html, lit le manifeste
 // et dirige vers data/ les demandes de fetch() et d'images qu'il connaît.
 (() => {
   const base = new URL('./', location.href).href;

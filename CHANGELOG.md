@@ -13,6 +13,16 @@ messages de commit et dans les commentaires des modules.
 
 ## Scène v16 — 21 novembre 2026
 
+### Retiré
+
+- **Moteur de scénario.** L'éditeur de scénario (`editeur.html`), la frise,
+  le bouton « Scénario » et le calque (fumigènes, unités APP-6, tracés) sont
+  retirés de la vue 3D et du site CENZUB, avec le tableur, `outils/scenario.py`
+  et le workflow `scenario.yml`. Ils restent dans l'historique git.
+- **Mesures du bas du panneau.** Les sections Soleil, Bâtiments, Terrain et
+  Végétation & sursol ne s'affichent plus ; elles restent dans la page, cachées,
+  pour les modules qui y écrivent et pour `outils/essai-navigateur.mjs`.
+
 ### Modifié
 
 - **Débattement en site saisi en degrés** (26 novembre 2026). Les champs du
