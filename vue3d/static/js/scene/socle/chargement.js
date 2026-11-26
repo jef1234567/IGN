@@ -1,51 +1,11 @@
-// La scène demandée au serveur : zone, reconstruction, reprises, avancement
+// La scène demandée au serveur : reprises, avancement
 // affiché, et les couches demandées d'avance.
 
-import { LAT0, LON0, ZONE_DEFAUT_M, ZONE, REQUETE } from './point.js';
+import { REQUETE } from './point.js';
 import {
     URL_VUE3D, URL_VUE3D_ORTHO, URL_MONUMENTS, URL_OUVRAGES, URL_PISCINES, URL_PANNEAUX,
     chargerImage,
 } from './reseau.js';
-
-const selectZone = document.getElementById('in-zone');
-// Une zone hors des choix proposés (?zone=850) s'ajoute à la liste.
-if (![...selectZone.options].some(o => o.value === String(ZONE))) {
-    selectZone.add(new Option(`${ZONE.toLocaleString('fr-FR')} m`, String(ZONE)));
-}
-selectZone.value = String(ZONE);
-selectZone.addEventListener('change', () => {
-    const u = new URL(location.href);
-    // Le point s'écrit toujours : sans lui, l'accueil redemanderait la position.
-    u.searchParams.set('lat', LAT0);
-    u.searchParams.set('lon', LON0);
-    // La zone par défaut ne s'écrit pas : le lien reste court.
-    if (selectZone.value !== String(ZONE_DEFAUT_M)) u.searchParams.set('zone', selectZone.value);
-    else u.searchParams.delete('zone');
-    location.assign(u.pathname + u.search + u.hash);
-});
-// Reconstruire la scène : le serveur la met de côté avec ses couches
-// (/api/reconstruire), et la page rechargée la reconstruit d'après les données
-// de l'IGN du moment ; si l'IGN ne répond pas, l'ancienne revient. Le serveur
-// refuse, en disant pourquoi, moins de 10 min après sa construction, ou
-// pendant qu'elle ou une de ses couches se calcule.
-document.getElementById('btn-reconstruire').addEventListener('click', async e => {
-    const bouton = e.currentTarget;
-    if (!confirm("Relire les données de l'IGN et reconstruire cette scène et ses couches ?\n"
-                 + 'Quelques secondes pour la scène ; véhicules, piscines et bateaux se détectent ensuite.')) return;
-    bouton.disabled = true;
-    try {
-        const r = await fetch(`api/reconstruire?${REQUETE}`, { method: 'POST' });
-        if (r.ok) {
-            location.reload();
-            return;
-        }
-        const corps = await r.json().catch(() => ({}));
-        alert(corps.erreur || `Reconstruction impossible (HTTP ${r.status}).`);
-    } catch (err) {
-        alert(`Reconstruction impossible : ${err.message}`);
-    }
-    bouton.disabled = false;
-});
 
 // La scène — bâtiments, toitures, houppiers, routes, relief — arrive en un seul
 // fichier. Sa première construction prend quelques secondes côté serveur ;

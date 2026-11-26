@@ -17,11 +17,12 @@ html, body { margin:0; height:100%; overflow:hidden;
 #panel header .sub { font-size:11px; color:var(--muted); word-break:break-all; }
 #panel header a { color:var(--accent); font-size:11px; text-decoration:none; display:block; margin-top:4px; }
 #panel header a:hover { text-decoration:underline; }
-#panel header .reconstruire { background:none; border:0; padding:0; margin:0 0 2px;
-                              color:var(--accent); font-size:11px; cursor:pointer; }
-#panel header .reconstruire:hover { text-decoration:underline; }
-#panel header .reconstruire:disabled { color:var(--muted); cursor:wait; text-decoration:none; }
 .section { padding:12px 16px; border-bottom:1px solid var(--line); }
+/* Le menu « Avancé », replié : réglages et mesures dont l'entraînement se passe. */
+#avance > summary { padding:10px 16px; cursor:pointer; color:var(--muted); font-size:11px;
+                    letter-spacing:.08em; text-transform:uppercase; border-bottom:1px solid var(--line); }
+#avance > summary:hover { color:var(--text); }
+#avance[open] > summary { color:var(--text); }
 .section h2 { margin:0 0 8px; font-size:10px; letter-spacing:.08em;
               text-transform:uppercase; color:var(--muted); font-weight:600; }
 .toggles { display:flex; flex-wrap:wrap; gap:6px; }
@@ -48,16 +49,6 @@ html, body { margin:0; height:100%; overflow:hidden;
 .barre { display:flex; height:16px; border-radius:3px; overflow:hidden; margin:6px 0 4px; }
 .barre span { display:flex; align-items:center; justify-content:center; min-width:0;
               font-size:10px; font-weight:700; color:#111; overflow:hidden; }
-/* Ensoleillement : la rampe des toits (couches/solaire, PALETTE), le seuil
-   favorable en trait, les valeurs en kWh/m²/an sous leurs crans. */
-.legende-solaire { margin:6px 0 8px; }
-.barre-solaire { position:relative; height:12px; border-radius:3px; }
-.barre-solaire i { position:absolute; top:-3px; bottom:-3px; width:2px; margin-left:-1px;
-                   background:var(--text); }
-.crans-solaire { position:relative; height:14px; font-size:10px; color:var(--muted); }
-.crans-solaire span { position:absolute; top:2px; transform:translateX(-50%); white-space:nowrap; }
-.crans-solaire span:first-child { transform:none; }
-.crans-solaire span:last-child { transform:translateX(-100%); }
 .pastille { display:inline-block; min-width:15px; padding:0 3px; border-radius:3px; text-align:center;
             font-weight:700; color:#111; font-size:10px; line-height:15px; }
 .liste-foncier { font-size:11px; margin-top:6px; }
@@ -132,26 +123,7 @@ button.lien-ext:disabled { color:var(--muted); cursor:wait; }
                             transform:translateX(-50%);
                             border-left:5px solid transparent; border-right:5px solid transparent;
                             border-bottom:7px solid var(--accent); }
-.form-point { display:flex; align-items:flex-start; gap:4px; margin:8px 0 6px; }
-.form-point .recherche { flex:1; min-width:0; }
-.form-point input { box-sizing:border-box; width:100%; background:#161a1e; color:#e8eaed;
-                    border:1px solid #3a4148; border-radius:4px; padding:4px 6px; font-size:12px; }
 #nom-point { font-size:12px; color:var(--text); margin-bottom:1px; }
-/* Dans le flux, et non par-dessus : le panneau défile, une liste
-   posée en absolu y serait coupée. */
-#suggestions { list-style:none; margin:4px 0 0; padding:0; max-height:260px; overflow-y:auto;
-               background:#161a1e; border:1px solid #3a4148; border-radius:4px; }
-#suggestions li { padding:5px 7px; font-size:12px; color:#e8eaed; cursor:pointer;
-                  border-top:1px solid var(--line); }
-#suggestions li:first-child { border-top:0; }
-#suggestions li:hover, #suggestions li[aria-selected="true"] { background:var(--panel-soft); }
-#suggestions li small { display:block; font-size:10px; color:var(--muted); }
-#suggestions li.message { color:var(--muted); cursor:default; background:none; }
-.form-point button { background:#2f6fb0; color:#fff; border:0; border-radius:4px;
-                     padding:4px 10px; font-size:12px; cursor:pointer; }
-.zone { display:flex; align-items:center; gap:6px; margin:0 0 6px; font-size:11px; color:var(--muted); }
-.zone select { flex:1; background:#161a1e; color:#e8eaed; border:1px solid #3a4148;
-               border-radius:4px; padding:3px 4px; font-size:12px; }
 /* Chaque message tient dans un <div> (socle/chargement.js) : posés à nu,
    son texte et ses <small> devenaient des éléments du flex, rangés côte à
    côte (« Scène indisponible », sa cause et le compte à rebours en trois
@@ -174,97 +146,6 @@ button.lien-ext:disabled { color:var(--muted); cursor:wait; }
            background:rgba(31,35,40,.78); color:var(--muted); font-size:10px;
            line-height:1.4; padding:4px 8px; border-radius:5px; text-align:right; }
 #credits a { color:var(--text); text-decoration:none; }
-/* L'avis sur le rendu, en bas à gauche de la vue, face aux crédits ; le mot
-   d'un 👎 s'ouvre au-dessus. */
-#avis { position:absolute; left:12px; bottom:12px; z-index:3; display:flex; flex-direction:column;
-        align-items:flex-start; gap:8px; max-width:calc(100% - 24px); }
-#avis[hidden], #avis-mot[hidden] { display:none; }
-/* En vol, le pad du drone occupe le bas de la vue. */
-#scene:has(#pad-drone:not([hidden])) :is(#avis, #soutenir) { display:none; }
-/* Au-dessus de l'avis : les exports BIM, sur ordinateur seulement (un
-   téléphone n'a pas de logiciel pour ouvrir un IFC). Cachés pendant que
-   s'écrit le mot d'un 👎. */
-#avis .exports { display:none; position:relative; align-items:center; background:rgba(31,35,40,.85);
-                 border:1px solid var(--line); border-radius:15px; }
-@media (hover: hover) and (pointer: fine) { html:not(.tiroir) #avis .exports { display:flex; } }
-#avis .exports .titre { padding:0 6px 0 12px; color:var(--muted); font-size:11px; white-space:nowrap; }
-#avis .exports button { display:flex; align-items:center; gap:4px; height:28px; padding:0 10px;
-                        background:none; border:0; color:var(--text); cursor:pointer;
-                        font:600 11px/1 system-ui, sans-serif; }
-#avis .exports [data-format] { border-left:1px solid var(--line); }
-#avis .exports .aide { justify-content:center; width:16px; height:16px; padding:0; margin-right:8px;
-                       border:1px solid var(--muted); border-radius:50%; color:var(--muted);
-                       font:700 10px/1 system-ui, sans-serif; cursor:help; }
-#avis .exports .aide:hover { border-color:var(--accent); }
-#avis .exports .bulle { display:none; position:absolute; left:0; bottom:calc(100% + 8px); width:290px;
-                        padding:10px 12px; background:rgba(31,35,40,.96); border:1px solid var(--line);
-                        border-radius:8px; box-shadow:0 6px 20px rgba(0,0,0,.4); color:var(--muted);
-                        font:12px/1.45 system-ui, sans-serif; }
-#avis .exports .bulle b { color:var(--text); }
-#avis .exports .aide:is(:hover, :focus-visible) + .bulle { display:block; }
-#avis .exports button:hover:not(:disabled) { color:var(--accent); }
-#avis .exports button:disabled { color:var(--muted); cursor:wait; }
-#avis .exports button:focus-visible { outline:2px solid var(--accent); outline-offset:-2px; }
-#avis .exports svg { width:14px; height:14px; fill:none; stroke:currentColor; stroke-width:2;
-                     stroke-linecap:round; stroke-linejoin:round; }
-#avis:has(#avis-mot:not([hidden])) .exports { display:none; }
-/* Le don sur Tipeee, en bas à droite au-dessus des crédits, qui tiennent une
-   à trois lignes : il suit leur hauteur (--credits-h, interface/avis.js). Au
-   téléphone, « Soutenir » seul, pour tenir sur la ligne de l'avis. */
-#soutenir { position:absolute; right:12px; bottom:calc(20px + var(--credits-h, 0px)); z-index:3;
-            display:flex; align-items:center; gap:8px; height:34px; padding:0 14px 0 4px;
-            box-sizing:border-box; background:rgba(31,35,40,.85); border:1px solid var(--line);
-            border-radius:18px; color:var(--text); font:600 12px/1 system-ui, sans-serif;
-            text-decoration:none; white-space:nowrap; -webkit-tap-highlight-color:transparent; }
-#soutenir svg { width:26px; height:26px; flex:none; }
-@media (hover: hover) { #soutenir:hover { color:var(--accent); border-color:#D84556; } }
-#soutenir:focus-visible { outline:2px solid var(--accent); outline-offset:2px; }
-#soutenir .court, html.tiroir #soutenir .long { display:none; }
-html.tiroir #soutenir .court { display:inline; }
-/* Le merci d'un export BIM : une fois par page, au milieu de la vue, sans
-   la bloquer ; il se ferme d'un clic, d'Échap, ou en allant sur Tipeee. */
-#merci-export { position:absolute; left:50%; top:50%; transform:translate(-50%, -50%); z-index:5;
-                width:min(340px, calc(100% - 24px)); box-sizing:border-box; padding:14px 16px;
-                background:rgba(31,35,40,.96); border:1px solid var(--line); border-radius:10px;
-                box-shadow:0 8px 30px rgba(0,0,0,.45); color:var(--text); font-size:13px; line-height:1.45; }
-#merci-export[hidden] { display:none; }
-#merci-export h3 { margin:0 0 6px; font-size:14px; }
-#merci-export p { margin:0 0 12px; color:var(--muted); }
-#merci-export .fichier { color:var(--text); overflow-wrap:anywhere; }
-#merci-export .actions { display:flex; justify-content:flex-end; gap:8px; }
-#merci-export .actions > * { padding:7px 12px; border-radius:6px; font:600 12px/1.2 system-ui, sans-serif;
-                             cursor:pointer; text-decoration:none; }
-#merci-export .fermer { background:none; border:1px solid var(--line); color:var(--text); }
-#merci-export a { background:#D84556; border:1px solid #D84556; color:#fff; }
-@media (hover: hover) { #merci-export a:hover { filter:brightness(1.1); } }
-#avis .pouces { display:flex; background:rgba(31,35,40,.85); border:1px solid var(--line);
-                border-radius:18px; overflow:hidden; }
-#avis .pouces button { display:flex; align-items:center; gap:6px; height:34px; padding:0 12px;
-                       background:none; border:0; color:var(--text); cursor:pointer;
-                       font:600 12px/1 system-ui, sans-serif; font-variant-numeric:tabular-nums;
-                       -webkit-tap-highlight-color:transparent; }
-#avis .pouces .question { display:flex; align-items:center; padding:0 4px 0 12px; color:var(--muted);
-                         font-size:11px; white-space:nowrap; }
-#avis .pouces button + button { border-left:1px solid var(--line); }
-@media (hover: hover) { #avis .pouces button:hover { color:var(--accent); } }
-#avis .pouces button:focus-visible { outline:2px solid var(--accent); outline-offset:-2px; }
-#avis .pouces button.on { background:var(--accent); color:#fff; }
-#avis .pouces button:disabled { cursor:wait; }
-#avis .pouces svg { width:18px; height:18px; fill:none; stroke:currentColor; stroke-width:1.8;
-                    stroke-linecap:round; stroke-linejoin:round; }
-#avis-mot { width:min(300px, calc(100vw - 24px)); padding:10px 12px; border-radius:8px;
-            background:rgba(31,35,40,.95); border:1px solid var(--line); font-size:12px; }
-#avis-mot label { display:block; color:var(--text); font-weight:600; margin-bottom:6px; }
-#avis-mot label small { color:var(--muted); font-weight:400; }
-#avis-mot textarea { width:100%; box-sizing:border-box; resize:vertical; font:13px/1.4 system-ui, sans-serif;
-                     background:#161a1e; color:var(--text); border:1px solid var(--line); border-radius:5px;
-                     padding:6px 8px; }
-#avis-mot textarea:focus { outline:none; border-color:var(--accent); }
-#avis-mot p { margin:6px 0 0; color:var(--muted); font-size:11px; }
-#avis-mot .actions { display:flex; justify-content:flex-end; gap:8px; margin-top:8px; }
-#avis-mot .actions button { padding:5px 12px; border-radius:5px; cursor:pointer; font-size:12px;
-                            border:1px solid var(--line); background:none; color:var(--text); }
-#avis-mot .actions [type=submit] { background:var(--accent); border-color:var(--accent); color:#fff; }
 #credits a:hover { text-decoration:underline; }
 #tip { position:absolute; z-index:3; background:rgba(31,35,40,.95); color:#e8eaed;
        font-size:11px; padding:6px 9px; border-radius:5px; pointer-events:none;
@@ -362,9 +243,7 @@ html.tiroir.tiroir-ouvert #panel { transform:none; visibility:visible;
                                    transition:transform .25s ease-out; }
 html.tiroir.tiroir-ouvert #voile { display:block; }
 html.tiroir #credits { left:12px; max-width:none; }
-/* Les crédits y prennent tout le bas : l'avis se pose au-dessus
-   (--credits-h, suivie par interface/avis.js). */
-html.tiroir #avis { bottom:calc(20px + var(--credits-h, 0px)); }
+
 @media (prefers-reduced-motion: reduce) { html.tiroir #panel { transition:none; } }
 /* Au doigt : des cibles d'au moins 36 px ; 16 px dans les champs, sous
    lesquels Safari iOS zoome sur celui qui prend le focus. */
@@ -372,12 +251,8 @@ html.tiroir #avis { bottom:calc(20px + var(--credits-h, 0px)); }
     .toggle { padding:9px 12px; font-size:13px; }
     .row { margin-top:14px; }
     .row label { font-size:12px; }
-    .form-point input, .zone select { font-size:16px; padding:7px 8px; }
-    .form-point button { padding:9px 14px; font-size:15px; }
-    #suggestions li { padding:10px 8px; font-size:14px; }
-    #panel header .reconstruire, #panel header a { font-size:13px; padding:4px 0; }
-    #avis .pouces button { height:40px; padding:0 14px; }
-    #avis-mot textarea { font-size:16px; }
+    #panel header a { font-size:13px; padding:4px 0; }
+    #avance summary { padding:12px 16px; font-size:13px; }
 }
 
 /* Frise du calque scénario (couches/scenario.js) : au-dessus des avis et des

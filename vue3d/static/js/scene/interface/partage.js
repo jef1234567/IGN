@@ -20,8 +20,7 @@ const COUCHES = {
     lignes: ['t-lignes', true], eoliennes: ['t-eoliennes', true], constructions: ['t-constructions', true],
     ouvrages: ['t-ouvrages', true],
     nuage: ['t-nuage', false], vehicules: ['t-vehicules', true], piscines: ['t-piscines', true],
-    navires: ['t-navires', true], panneaux: ['t-panneaux', true], dpe: ['t-dpe', false], dvf: ['t-dvf', false],
-    bornes: ['t-bornes', false], solaire: ['t-solaire', false],
+    navires: ['t-navires', true], panneaux: ['t-panneaux', true],
 };
 const RAD = Math.PI / 180;
 

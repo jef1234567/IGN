@@ -51,42 +51,14 @@
             </svg>Vue 3D IGN</h1>
             <div id="nom-point" hidden></div>
             <div class="sub" id="coord-point">—</div>
-            <form id="form-point" class="form-point" role="search" autocomplete="off">
-                <div class="recherche">
-                    <input id="in-lieu" type="search" placeholder="Adresse, lieu ou « lat, lon »"
-                           aria-label="Adresse, lieu ou coordonnées" role="combobox" aria-autocomplete="list"
-                           aria-expanded="false" aria-controls="suggestions" enterkeyhint="go" spellcheck="false" />
-                    <ul id="suggestions" role="listbox" aria-label="Lieux trouvés" hidden></ul>
-                </div>
-                <button type="submit">Voir</button>
-            </form>
-            <!-- 2 000 m n'est pas proposé : la vue y rame (81 875 houppiers à
-                 Gordes, quatre fois ceux de 1 000 m). `&zone=2000` dans l'URL
-                 reste servi, et le sélecteur l'affiche alors. -->
-            <label class="zone" title="Côté nord-sud de la zone chargée. Une zone plus petite se construit plus vite : jusqu'à huit fois à 350 m.">
-                Zone
-                <select id="in-zone">
-                    <option value="350">350 m</option>
-                    <option value="500">500 m</option>
-                    <option value="700">700 m</option>
-                    <option value="1000">1 000 m (par défaut)</option>
-                </select>
-            </label>
-            <button type="button" id="btn-reconstruire" class="reconstruire"
-                    title="Relire les données de l'IGN et reconstruire cette scène et ses couches. Au plus une fois toutes les 10 minutes.">↻ Reconstruire la scène</button>
             <a href="https://github.com/ysimonx/vue-3d-ign#readme" target="_blank" rel="noopener">📐 Méthode et sources ↗</a>
         </header>
 
         <div class="section">
             <h2>Affichage</h2>
             <div class="toggles">
-                <button class="toggle on" id="t-roof">Toits en pente</button>
-                <button class="toggle on" id="t-mesure" title="Pans mesurés au LiDAR là où le toit résumé s'en écarte de plus de 0,7 m">Toits mesurés</button>
-                <button class="toggle" id="t-roofer" hidden title="Les bâtiments reconstruits par roofer (3DBAG) à partir du nuage LiDAR HD, à la place de ceux de la vue">Toits roofer</button>
-                <button class="toggle on" id="t-monuments" hidden title="Parties de bâtiments modélisées dans OpenStreetMap (building:part)">Monuments OSM</button>
                 <button class="toggle" id="t-orbit">Orbite</button>
                 <button class="toggle on" id="t-fond">Photo aérienne</button>
-                <button class="toggle" id="t-plan">Plan IGN</button>
                 <button class="toggle on" id="t-relief">Relief</button>
                 <button class="toggle on" id="t-horizon" title="Le paysage alentour jusqu'à 60 km, en tuiles : orthophoto et RGE ALTI de l'IGN">Horizon</button>
                 <button class="toggle" id="t-veg">Végétation</button>
@@ -96,26 +68,16 @@
                 <button class="toggle on" id="t-eoliennes" hidden title="Éoliennes d'OpenStreetMap, jusqu'à l'anneau : moyeu, rotor, modèle">Éoliennes</button>
                 <button class="toggle on" id="t-constructions" hidden title="Réservoirs, torchères, cheminées, antennes et mâts de la BD TOPO">Réservoirs, mâts</button>
                 <button class="toggle on" id="t-ouvrages" hidden title="Murs, ponts, voies ferrées et terrains de sport de la BD TOPO">Murs, ponts, rails</button>
-                <button class="toggle" id="t-nuage" hidden title="Tout le bâti en points du nuage LiDAR HD ; les ouvrages ajourés, comme la tour Eiffel, y sont toujours">Nuage LiDAR</button>
                 <button class="toggle on" id="t-vehicules" hidden title="Véhicules vus sur l'orthophoto, le jour de la prise de vue">Véhicules</button>
                 <button class="toggle on" id="t-piscines" hidden title="Piscines vues sur l'orthophoto">Piscines</button>
                 <button class="toggle on" id="t-navires" hidden title="Bateaux vus sur l'orthophoto, sur l'eau">Bateaux</button>
                 <button class="toggle on" id="t-panneaux" hidden title="Panneaux solaires du registre OpenPVMapper">Panneaux solaires</button>
-                <button class="toggle" id="t-dpe" title="Diagnostics de performance énergétique (ADEME) des bâtiments autour du point : lus au premier clic">DPE</button>
-                <button class="toggle" id="t-dvf" title="Ventes immobilières des cinq dernières années (DVF) autour du point : lues au premier clic">Ventes DVF</button>
-                <button class="toggle" id="t-bornes" title="Bornes de recharge pour véhicules électriques (base nationale IRVE, data.gouv.fr) autour du point : lues au premier clic">Bornes de recharge</button>
                 <button class="toggle" id="t-scenario" hidden title="Le scénario chargé : sa frise et ses effets (fumigènes, unités)">Scénario</button>
                 <a class="toggle" id="lien-editeur" href="editeur.html" title="Placer fumigènes, jalons et unités sur la carte de la scène, au fil du temps">Éditeur de scénario</a>
-                <button class="toggle" id="t-solaire" title="Le soleil reçu par chaque toit sur une année type (PVGIS), avec l'ombre des bâtiments, des arbres et du relief : calculé au premier clic">Ensoleillement</button>
             </div>
             <div class="row">
                 <label for="speed" title="Orbite : degrés par seconde. Drone : vitesse de pointe, 3 m/s par cran.">vitesse</label>
                 <input type="range" id="speed" min="1" max="20" step="1" value="6" />
-            </div>
-            <div class="row">
-                <label for="exag">exagération Z</label>
-                <input type="range" id="exag" min="1" max="5" step="0.5" value="1" />
-                <b id="s-exag">1</b>
             </div>
             <div class="row">
                 <label for="heure">heure</label>
@@ -135,34 +97,6 @@
             </div>
         </div>
 
-        <div class="section">
-            <h2>Soleil</h2>
-            <div class="stat"><span>date</span><b id="s-date">—</b></div>
-            <div class="stat"><span>azimut</span><b id="s-azimut">—</b></div>
-            <div class="stat"><span>hauteur</span><b id="s-hauteur">—</b></div>
-            <div class="note" id="note-soleil"></div>
-        </div>
-
-        <div class="section">
-            <h2>Export BIM</h2>
-            <div class="toggles">
-                <button class="toggle on" id="x-relief">Relief</button>
-                <button class="toggle on" id="x-batiments">Bâtiments</button>
-                <button class="toggle on" id="x-arbres">Arbres</button>
-                <button class="toggle" id="x-masses" title="Sursol ni bâti ni végétal : murs, abris, véhicules…">Masses de sursol</button>
-            </div>
-            <button type="button" class="lien-ext" id="btn-ifc" data-format="ifc"
-                    title="Pour Revit, ArchiCAD, Vectorworks, Allplan…">⬇ IFC 4</button>
-            <button type="button" class="lien-ext" id="btn-citygml" data-format="citygml"
-                    title="Pour les SIG et les maquettes urbaines : FME, 3DCityDB, FZKViewer…">⬇ CityGML 2.0</button>
-            <div class="note" id="note-export">
-                IFC pour la conception (Revit, ArchiCAD…), CityGML pour les SIG.
-                Les bâtiments tels qu'affichés (toits en pente, mesurés, monuments
-                OSM), à l'échelle, en Lambert-93 et altitudes NGF. Une maquette de
-                contexte, pas un relevé.
-            </div>
-        </div>
-
         <div class="section" id="sec-moi" hidden>
             <h2>Ma position</h2>
             <div class="stat"><span>précision</span><b id="m-prec">—</b></div>
@@ -171,73 +105,82 @@
         </div>
 
         <div class="section">
-            <h2>Bâtiments</h2>
-            <div class="stat"><span>chargés</span><b id="s-total">—</b></div>
-            <div class="stat"><span>avec toit mesuré</span><b id="s-roof">—</b></div>
-            <div class="stat"><span>toit mesuré au LiDAR</span><b id="s-lidar">—</b></div>
-            <div class="stat"><span>dénivelé médian</span><b id="s-slope">—</b></div>
-            <div class="stat" id="l-ecarts" hidden title="Toits dessinés comparés aux points « bâtiment » du nuage LiDAR HD qui tombent dessus"><span>vérifiés au nuage LiDAR</span><b id="s-ecarts">—</b></div>
-            <div class="note legende" id="legende-ecarts" hidden>Points du nuage sur les toits, décalage ôté :<i class="sous"></i>toit au-dessus<i class="egal"></i>à ±0,25 m<i class="sur"></i>toit en dessous</div>
-            <div class="note" id="note">Chargement des bâtiments…</div>
-        </div>
-
-        <div class="section">
             <h2>Bâtiment</h2>
             <div id="fiche-batiment"></div>
             <div class="note" id="note-batiment">Chargement des bâtiments…</div>
         </div>
 
-        <div class="section" id="sec-dpe" hidden>
-            <h2>DPE (ADEME)</h2>
-            <div id="dpe-resume"></div>
-            <div class="note" id="dpe-note"></div>
-        </div>
-
-        <div class="section" id="sec-dvf" hidden>
-            <h2>Ventes (DVF)</h2>
-            <div id="dvf-resume"></div>
-            <div id="dvf-parcelle"></div>
-            <div class="note" id="dvf-note"></div>
-        </div>
-
-        <div class="section" id="sec-bornes" hidden>
-            <h2>Bornes de recharge (IRVE)</h2>
-            <div id="bornes-resume"></div>
-            <div class="note" id="bornes-note"></div>
-        </div>
-
-        <div class="section" id="sec-solaire" hidden>
-            <h2>Ensoleillement des toits</h2>
-            <div id="solaire-resume"></div>
-            <div class="note" id="solaire-note"></div>
-        </div>
-
-        <div class="section">
-            <h2>Terrain</h2>
-            <div class="stat"><span>source</span><b id="s-src">—</b></div>
-            <div class="stat"><span>altitude au centre</span><b id="s-alt">—</b></div>
-            <div class="stat"><span>amplitude sur l'emprise</span><b id="s-amp">—</b></div>
-            <div class="note" id="note-terrain">Chargement du relief…</div>
-        </div>
-
-        <div class="section">
-            <h2>Ce que ça montre</h2>
-            <div class="note">
-                Les murs montent à la gouttière et le toit rejoint le faîtage,
-                mesurés au LiDAR HD de l'IGN quand il est fiable, sinon déclarés
-                par la BD TOPO. La végétation est segmentée arbre par arbre sur le
-                modèle de hauteur à 0,5 m, et le soleil suit sa vraie course pour
-                le lieu et la date choisis.
+        <!-- Le menu « Avancé » : réglages et mesures qui ne servent pas à
+             l'entraînement, gardés repliés pour alléger le panneau. -->
+        <details id="avance">
+            <summary>Avancé</summary>
+            <div class="section">
+                <h2>Bâti et fonds</h2>
+                <div class="toggles">
+                    <button class="toggle on" id="t-roof">Toits en pente</button>
+                    <button class="toggle on" id="t-mesure" title="Pans mesurés au LiDAR là où le toit résumé s'en écarte de plus de 0,7 m">Toits mesurés</button>
+                    <button class="toggle" id="t-roofer" hidden title="Les bâtiments reconstruits par roofer (3DBAG) à partir du nuage LiDAR HD, à la place de ceux de la vue">Toits roofer</button>
+                    <button class="toggle on" id="t-monuments" hidden title="Parties de bâtiments modélisées dans OpenStreetMap (building:part)">Monuments OSM</button>
+                    <button class="toggle" id="t-plan">Plan IGN</button>
+                    <button class="toggle" id="t-nuage" hidden title="Tout le bâti en points du nuage LiDAR HD ; les ouvrages ajourés, comme la tour Eiffel, y sont toujours">Nuage LiDAR</button>
+                </div>
+                <div class="row">
+                    <label for="exag">exagération Z</label>
+                    <input type="range" id="exag" min="1" max="5" step="0.5" value="1" />
+                    <b id="s-exag">1</b>
+                </div>
             </div>
-        </div>
-
-        <div class="section" id="sec-veg" hidden>
-            <h2>Végétation &amp; sursol</h2>
-            <div class="stat"><span>hauteur max</span><b id="v-max">—</b></div>
-            <div class="stat"><span>masque au sud</span><b id="v-masque">—</b></div>
-            <div class="stat"><span>obstacle dominant</span><b id="v-obstacle">—</b></div>
-            <div class="note" id="v-note">Chargement…</div>
-        </div>
+            <div class="section">
+                <h2>Soleil</h2>
+                <div class="stat"><span>date</span><b id="s-date">—</b></div>
+                <div class="stat"><span>azimut</span><b id="s-azimut">—</b></div>
+                <div class="stat"><span>hauteur</span><b id="s-hauteur">—</b></div>
+                <div class="note" id="note-soleil"></div>
+            </div>
+            <div class="section">
+                <h2>Export BIM</h2>
+                <div class="toggles">
+                    <button class="toggle on" id="x-relief">Relief</button>
+                    <button class="toggle on" id="x-batiments">Bâtiments</button>
+                    <button class="toggle on" id="x-arbres">Arbres</button>
+                    <button class="toggle" id="x-masses" title="Sursol ni bâti ni végétal : murs, abris, véhicules…">Masses de sursol</button>
+                </div>
+                <button type="button" class="lien-ext" id="btn-ifc" data-format="ifc"
+                        title="Pour Revit, ArchiCAD, Vectorworks, Allplan…">⬇ IFC 4</button>
+                <button type="button" class="lien-ext" id="btn-citygml" data-format="citygml"
+                        title="Pour les SIG et les maquettes urbaines : FME, 3DCityDB, FZKViewer…">⬇ CityGML 2.0</button>
+                <div class="note" id="note-export">
+                    IFC pour la conception (Revit, ArchiCAD…), CityGML pour les SIG.
+                    Les bâtiments tels qu'affichés (toits en pente, mesurés, monuments
+                    OSM), à l'échelle, en Lambert-93 et altitudes NGF. Une maquette de
+                    contexte, pas un relevé.
+                </div>
+            </div>
+            <div class="section">
+                <h2>Bâtiments</h2>
+                <div class="stat"><span>chargés</span><b id="s-total">—</b></div>
+                <div class="stat"><span>avec toit mesuré</span><b id="s-roof">—</b></div>
+                <div class="stat"><span>toit mesuré au LiDAR</span><b id="s-lidar">—</b></div>
+                <div class="stat"><span>dénivelé médian</span><b id="s-slope">—</b></div>
+                <div class="stat" id="l-ecarts" hidden title="Toits dessinés comparés aux points « bâtiment » du nuage LiDAR HD qui tombent dessus"><span>vérifiés au nuage LiDAR</span><b id="s-ecarts">—</b></div>
+                <div class="note legende" id="legende-ecarts" hidden>Points du nuage sur les toits, décalage ôté :<i class="sous"></i>toit au-dessus<i class="egal"></i>à ±0,25 m<i class="sur"></i>toit en dessous</div>
+                <div class="note" id="note">Chargement des bâtiments…</div>
+            </div>
+            <div class="section">
+                <h2>Terrain</h2>
+                <div class="stat"><span>source</span><b id="s-src">—</b></div>
+                <div class="stat"><span>altitude au centre</span><b id="s-alt">—</b></div>
+                <div class="stat"><span>amplitude sur l'emprise</span><b id="s-amp">—</b></div>
+                <div class="note" id="note-terrain">Chargement du relief…</div>
+            </div>
+            <div class="section" id="sec-veg" hidden>
+                <h2>Végétation &amp; sursol</h2>
+                <div class="stat"><span>hauteur max</span><b id="v-max">—</b></div>
+                <div class="stat"><span>masque au sud</span><b id="v-masque">—</b></div>
+                <div class="stat"><span>obstacle dominant</span><b id="v-obstacle">—</b></div>
+                <div class="note" id="v-note">Chargement…</div>
+            </div>
+        </details>
     </div>
 
     <div id="voile"></div>
@@ -255,10 +198,7 @@
             <div id="etat-nuage" class="etat-couche" role="status" hidden><i class="roue"></i><span></span></div>
             <div id="etat-vehicules" class="etat-couche" role="status" hidden><i class="roue"></i><span></span></div>
             <div id="etat-roofer" class="etat-couche" role="status" hidden><i class="roue"></i><span></span></div>
-            <div id="etat-foncier" class="etat-couche" role="status" hidden><i class="roue"></i><span></span></div>
-            <div id="etat-solaire" class="etat-couche" role="status" hidden><i class="roue"></i><span></span></div>
             <div id="etat-partage" class="etat-couche" role="status" hidden><i class="roue"></i><span></span></div>
-            <div id="etat-avis" class="etat-couche" role="status" hidden><i class="roue"></i><span></span></div>
             <div id="etat-moi" class="etat-couche" role="status" hidden><i class="roue"></i><span></span></div>
             <div id="etat-scenario" class="etat-couche" role="status" hidden><i class="roue"></i><span></span></div>
             <div id="conseil-veg" class="etat-couche conseil" role="status" hidden>
@@ -309,14 +249,6 @@
             </button>
             <button type="button" id="v-nuage" class="bouton-vue texte" hidden aria-label="Nuage LiDAR"
                     title="Nuage LiDAR : tout le bâti en points du LiDAR HD ; les ouvrages ajourés, comme la tour Eiffel, y sont toujours">LiDAR</button>
-            <a id="t-voiture" class="bouton-vue" href="voiture" aria-label="En voiture"
-               title="En voiture : la vue suit votre position comme un GPS, et charge les bâtiments sur la route, devant vous">
-                <svg viewBox="0 0 24 24" aria-hidden="true">
-                    <path d="M4.5 16.5v-3.4l1.7-4.3a2 2 0 0 1 1.9-1.3h7.8a2 2 0 0 1 1.9 1.3l1.7 4.3v3.4z"/>
-                    <path d="M4.5 13.1h15"/>
-                    <circle cx="8" cy="16.6" r="1.6"/><circle cx="16" cy="16.6" r="1.6"/>
-                </svg>
-            </a>
             <button type="button" id="t-drone" class="bouton-vue" aria-label="Drone"
                     title="Piloter un drone, vu de derrière : au clavier, flèches, Q D, espace et Maj ; au doigt, les flèches à l'écran">
                 <svg viewBox="0 0 24 24" aria-hidden="true">
@@ -369,11 +301,10 @@
                         <div><b>Un bâtiment</b><span data-doigt="Le toucher : sa fiche s'ouvre — usage, hauteur, étages, année, matériaux."
                             data-souris="Le survoler pour mesurer ; cliquer pour sa fiche — usage, hauteur, étages, année, matériaux."></span></div></li>
                     <li><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 21s-7-6.2-7-11a7 7 0 0 1 14 0c0 4.8-7 11-7 11z"/><circle cx="12" cy="10" r="2.5"/></svg>
-                        <div><b>Changer de lieu</b><span>Chercher une adresse dans le panneau (☰ en haut à gauche sur petit écran).
-                            Les flèches N, E, S, O au bord de la vue décalent la scène dans leur direction.</span></div></li>
+                        <div><b>Changer de lieu</b><span>Les flèches N, E, S, O au bord de la vue décalent la scène dans leur direction.</span></div></li>
                     <li><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3l9 5-9 5-9-5 9-5z"/><path d="M3 13l9 5 9-5"/></svg>
-                        <div><b>Choisir ce qui s'affiche</b><span>Dans le panneau : toits, végétation, eau, plan IGN ou photo,
-                            heure et saison pour les ombres, DPE et ventes immobilières (DVF) des bâtiments, bornes de recharge.</span></div></li>
+                        <div><b>Choisir ce qui s'affiche</b><span>Dans le panneau (☰ en haut à gauche sur petit écran) : végétation, eau,
+                            routes, horizon, heure et saison pour les ombres ; toits, plan IGN et export dans « Avancé ».</span></div></li>
                     <li><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="5.5" cy="5.5" r="3"/><circle cx="18.5" cy="5.5" r="3"/><circle cx="5.5" cy="18.5" r="3"/><circle cx="18.5" cy="18.5" r="3"/><path d="M7.6 7.6l2.4 2.4M16.4 7.6L14 10M7.6 16.4l2.4-2.4M16.4 16.4L14 14"/><rect x="10" y="10" width="4" height="4" rx="1"/></svg>
                         <div><b>Survoler en drone</b><span data-doigt="Le bouton drone, à droite : les flèches à l'écran pour avancer, tourner, monter, descendre ; le même bouton pour sortir."
                             data-souris="Le bouton drone, à droite : ↑ ↓ avancer, ← → tourner, Q D glisser, espace monter, Maj descendre ; Échap pour sortir."></span></div></li>
@@ -409,84 +340,7 @@
             <button type="button" data-vers="o"><span class="pointe"></span>O</button>
         </div>
         <div id="tip"></div>
-        <!-- L'avis sur le rendu : 👍 et 👎 comptés pour tous ; un 👎 demande,
-             sans l'exiger, ce qui ne va pas (interface/avis.js). -->
-        <div id="avis" hidden>
-            <!-- Sur ordinateur, les deux exports BIM du panneau à portée de la vue :
-                 leur data-format les branche à export/boutons.js, mêmes options. -->
-            <div class="exports" role="group" aria-label="Exporter la vue en maquette BIM">
-                <span class="titre" aria-hidden="true">Export BIM</span>
-                <!-- Hors du métier, « IFC » et « CityGML » ne disent rien : une bulle le dit. -->
-                <button type="button" class="aide" aria-label="À quoi sert l'export BIM ?"
-                        aria-describedby="aide-bim">?</button>
-                <span class="bulle" id="aide-bim" role="tooltip"><b>La maquette 3D de cette
-                    vue</b>, bâtiments, relief et arbres, dans un fichier à ouvrir dans un
-                    logiciel d'architecture (IFC : Revit, ArchiCAD…) ou de ville en 3D
-                    (CityGML : FME, FZKViewer…). Ce qui part se choisit dans le panneau, à
-                    « Export BIM ».</span>
-                <button type="button" data-format="ifc"
-                        title="Télécharger la vue en IFC 4, pour Revit, ArchiCAD… (options : panneau, Export BIM)">
-                    <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 4v11M7 10.5l5 5 5-5M5 20h14"/></svg>IFC
-                </button>
-                <button type="button" data-format="citygml"
-                        title="Télécharger la vue en CityGML 2.0, pour les SIG (options : panneau, Export BIM)">
-                    <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 4v11M7 10.5l5 5 5-5M5 20h14"/></svg>CityGML
-                </button>
-            </div>
-            <form id="avis-mot" hidden>
-                <label for="avis-texte">Qu'est-ce qui ne va pas ? <small>facultatif</small></label>
-                <textarea id="avis-texte" rows="3" maxlength="1000"
-                          placeholder="Un toit plat, des arbres sur la route, un bâtiment absent…"></textarea>
-                <p>La vue et sa capture partent avec votre avis.</p>
-                <div class="actions">
-                    <button type="button" class="passer">Passer</button>
-                    <button type="submit">Envoyer</button>
-                </div>
-            </form>
-            <div class="pouces" role="group" aria-label="Votre avis sur ce rendu">
-                <span class="question" aria-hidden="true">Ce rendu ?</span>
-                <button type="button" id="avis-pour" aria-pressed="false" title="Ce rendu me plaît">
-                    <svg viewBox="0 0 24 24" aria-hidden="true">
-                        <rect x="3" y="10.5" width="4" height="9.5" rx="1"/>
-                        <path d="M7 11.5l3.4-6.4a1.6 1.6 0 0 1 3 1L13 10.5h5.2a2 2 0 0 1 2 2.4l-1.3 5.5a2 2 0 0 1-2 1.6H7"/>
-                    </svg><span>0</span>
-                </button>
-                <button type="button" id="avis-contre" aria-pressed="false" title="Ce rendu ne me plaît pas : dites ce qui ne va pas">
-                    <svg viewBox="0 0 24 24" aria-hidden="true"><g transform="rotate(180 12 12)">
-                        <rect x="3" y="10.5" width="4" height="9.5" rx="1"/>
-                        <path d="M7 11.5l3.4-6.4a1.6 1.6 0 0 1 3 1L13 10.5h5.2a2 2 0 0 1 2 2.4l-1.3 5.5a2 2 0 0 1-2 1.6H7"/>
-                    </g></svg><span>0</span>
-                </button>
-            </div>
-        </div>
         <div id="credits"></div>
-        <!-- Le don, en bas à droite au-dessus des crédits : à côté de l'avis, il
-             passait inaperçu. Le logo de Tipeee (leur favicon) est écrit ici :
-             rien n'est chargé de chez eux. -->
-        <a id="soutenir" href="https://fr.tipeee.com/yannickoo" target="_blank" rel="noopener"
-           title="Vue 3D IGN est gratuit, sans publicité ni compte : un don sur Tipeee me donne du temps pour l'améliorer">
-            <svg viewBox="0 0 480.3 480.3" aria-hidden="true">
-                <rect width="480.3" height="480.3" rx="80" fill="#D84556"/>
-                <g fill="#fff">
-                    <path d="M257.8,277.2h-11.2l0-115.4c0-2-1.6-3.6-3.5-3.6l-59.7,17.9c-2.7,0.7-3.5,3.2-3.5,5.2l0,34.3c0,2,1.6,3.6,3.5,3.6L194,216l0,61.3h-11.2c-2,0-3.5,1.6-3.5,3.6l0,35.9c0,2,1.6,3.6,3.5,3.6l75.1,0c2,0,3.5-1.6,3.5-3.6l0-35.9C261.3,278.8,259.7,277.2,257.8,277.2z"/>
-                    <path d="M220.2,153.1c14.5,0,26.3-11.8,26.3-26.3c0-14.5-11.8-26.3-26.3-26.3c-14.5,0-26.3,11.8-26.3,26.3C193.9,141.3,205.7,153.1,220.2,153.1z"/>
-                    <path d="M158.3,158.2h-27.5c0-0.9,0-1.8,0-2.8l0-35.6c0,0,0.9-10-9.8-6.3c-10.7,3.7-35.2,10.8-35.2,10.8s-5.7,0.8-5.7,8.2c0,6.2,0.1,9.8,0.2,25.6l-13,0c-2,0-3.5,1.6-3.5,3.6l0,35.9c0,2,1.6,3.6,3.5,3.6h13.2c0,19.1,0.1,44.3,0.1,78.2c0,0-3.2,63.4,76.8,32.2c0,0,4-2.2,4.3-5.7l0-34.7c0,0,0-5.3-4.9-2.9c0,0-26,11.9-26-5.1c0-13.7,0-14.3,0-61.9l27.5,0c2,0,3.5-1.6,3.5-3.6l0-35.9C161.8,159.8,160.2,158.2,158.3,158.2z"/>
-                    <path d="M355.5,158.2c-8.6,0-16.8,1.7-24.4,4.9v-1.5c0-2-1.6-3.6-3.5-3.6l-60.5,0c-2,0-3.5,1.6-3.5,3.6v35.9c0,2,1.6,3.6,3.5,3.6h11.5l0,139.3H267c-2,0-3.5,1.6-3.5,3.6l0,35.9c0,2,1.6,3.6,3.5,3.6l75.3,0c2,0,3.5-1.6,3.5-3.6V344c0-2-1.6-3.6-3.5-3.6h-11.2l0-25.2c7.6,3.2,15.8,4.9,24.4,4.9c39.1,0,70.8-36.3,70.8-81C426.2,194.5,394.6,158.2,355.5,158.2zM356.3,278.2c-14-0.1-25.3-17.6-25.2-39.1c0.1-21.5,11.5-38.9,25.5-38.9c14,0.1,25.3,17.6,25.2,39.1C381.7,260.9,370.3,278.3,356.3,278.2z"/>
-                </g>
-            </svg>
-            <span class="long">Soutenez ce projet</span><span class="court">Soutenir</span>
-        </a>
-        <!-- Après un export BIM, une fois par page (export/boutons.js) : le
-             fichier rend un vrai service, c'est le moment de proposer le don. -->
-        <div id="merci-export" role="dialog" aria-labelledby="merci-titre" hidden>
-            <h3 id="merci-titre">Fichier téléchargé</h3>
-            <p><span class="fichier"></span> est dans vos téléchargements. S'il vous rend
-                service, un merci sur Tipeee m'aide à améliorer ce projet.</p>
-            <div class="actions">
-                <button type="button" class="fermer">Fermer</button>
-                <a href="https://fr.tipeee.com/yannickoo" target="_blank" rel="noopener">Dire merci sur Tipeee ↗</a>
-            </div>
-        </div>
     </div>
 </div>
 

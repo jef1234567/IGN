@@ -1033,9 +1033,7 @@ npm install puppeteer-core
 node outils/essai-navigateur.mjs "http://localhost:8080/?lat=43.9116&lon=5.2003" capture.png
 node outils/essai-voiture.mjs "http://localhost:8080/voiture?simu=1&lat=48.8706&lon=2.3055&vitesse=50" 60 voiture.png   # la vue en voiture, une minute de conduite simulée
 node outils/film-voiture.mjs "http://localhost:8080/voiture?simu=1&lat=48.8532&lon=2.3692&vers=48.8483,2.3958&versnom=Nation&vitesse=40" docs/demo/demo-voiture-paysage.mp4   # le film d'un trajet, de la Bastille à la Nation
-node outils/verifier-recherche.mjs     # la recherche d'un lieu, sous Node, sans réseau
 node outils/verifier-export.mjs essai.ifc essai.gml   # les exports, sous Node (npm install three@0.160.0)
-node outils/verifier-solaire.mjs http://localhost:8080   # l'ensoleillement contre PVGIS, sous Node (three@0.160.0, réseau)
 pip install ifcopenshell pytest && python outils/valider_ifc.py essai.ifc   # l'IFC, comme un logiciel le lirait
 python outils/valider_citygml.py essai.gml   # la géométrie du CityGML, sans dépendance
 citygml-tools validate essai.gml             # son schéma (github.com/citygml4j/citygml-tools)

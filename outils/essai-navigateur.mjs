@@ -124,26 +124,8 @@ await page.evaluate(() => { const h = document.getElementById('heure'); h.value 
 console.log('soleil au 21 décembre, 13 h :', await page.$eval('#s-date', e => e.textContent), '·', await page.$eval('#s-hauteur', e => e.textContent));
 await new Promise(r => setTimeout(r, 800));
 await page.screenshot({ path: sortie });
-// DPE, ventes DVF et bornes de recharge : lus seulement au clic (ADEME,
-// cadastre et fichiers DVF, data.gouv.fr), leur section du panneau s'ouvre ;
-// la fiche du bâtiment visé dit ses DPE, ou qu'il n'en a pas.
-for (const [bouton, section, resume] of [['#t-dpe', '#sec-dpe', '#dpe-resume'], ['#t-dvf', '#sec-dvf', '#dvf-resume'],
-                                         ['#t-bornes', '#sec-bornes', '#bornes-resume']]) {
-  try {
-    await page.click(bouton);
-    await page.waitForFunction(s => !document.querySelector(s).hidden, { timeout: 90000 }, section);
-    console.log(`${bouton.slice(3).toUpperCase()} :`, (await page.$eval(resume, e => e.innerText.replace(/\s+/g, ' ').trim())).slice(0, 200));
-  } catch (e) {
-    erreurs.push(`${bouton} : ` + (await page.$eval('#etat-foncier', e => e.textContent).catch(() => e.message)));
-  }
-}
-console.log('fiche avec DPE :', (await page.$eval('#fiche-batiment', e => e.innerText.replace(/\s+/g, ' '))).match(/DPE.{0,120}/)?.[0] || '(aucun)');
-await new Promise(r => setTimeout(r, 800));
-await page.screenshot({ path: sortie.replace(/(\.png)?$/, '-dpe-dvf.png') });
-// Éteints, pour que la suite voie la page telle qu'elle s'ouvre.
-await page.click('#t-dpe');
-await page.click('#t-dvf');
-await page.click('#t-bornes');
+// Les exports sont dans le menu « Avancé », replié à l'ouverture.
+await page.evaluate(() => { document.getElementById('avance').open = true; });
 // Exports IFC et CityGML : chaque fichier arrive dans le dossier de la
 // capture, et la note dit sa taille et ce qu'il contient.
 // outils/valider_ifc.py et outils/valider_citygml.py les valident ensuite.
@@ -255,26 +237,6 @@ try {
   if (await page.$eval('#t-orbit', e => e.classList.contains('on'))) erreurs.push('décalage : orbite repartie');
 } catch (e) {
   erreurs.push('décalage : ' + e.message);
-}
-// Recherche d'un lieu : suggestions du géocodage de l'IGN, puis Entrée, qui
-// mène à la première. Le nom choisi doit suivre, sans passer par l'URL.
-await page.type('#in-lieu', 'place du chateau gordes');
-try {
-  await page.waitForFunction(() => document.querySelector('#suggestions li[role="option"]'), { timeout: 20000 });
-  console.log('suggestion :', await page.$eval('#suggestions li', li => li.textContent));
-  quittee = true;
-  await Promise.all([page.waitForNavigation({ waitUntil: 'domcontentloaded' }), page.keyboard.press('Enter')]);
-  const u = new URL(page.url());
-  const [lat, lon] = [Number(u.searchParams.get('lat')), Number(u.searchParams.get('lon'))];
-  console.log('après Entrée :', u.search);
-  if (Math.abs(lat - 43.9112) > 0.001 || Math.abs(lon - 5.1997) > 0.001) erreurs.push('recherche : mauvais point ' + u.search);
-  if ([...u.searchParams.keys()].some(k => !['lat', 'lon', 'zone'].includes(k))) erreurs.push('recherche : URL ' + u.search);
-  await page.waitForFunction(() => !document.getElementById('nom-point').hidden, { timeout: 10000 });
-  const nom = await page.$eval('#nom-point', e => e.textContent);
-  console.log('nom affiché :', nom);
-  if (nom !== 'Place du Château') erreurs.push('recherche : nom affiché « ' + nom + ' »');
-} catch (e) {
-  erreurs.push('recherche : ' + e.message);
 }
 const perdues = [...tuiles.refusees].filter(([cle]) => !tuiles.relues.has(cle) && !tuiles.absentes.has(cle));
 console.log(`tuiles : ${tuiles.redirigees} redirigées vers l'IGN, ${tuiles.stock} servies du stock, `

@@ -3,7 +3,7 @@
 
 import './socle/point.js';
 import './socle/reseau.js';
-import './interface/recherche.js';
+import './interface/nom-point.js';
 import './socle/chargement.js';
 import './socle/projection.js';
 import './terrain/etat.js';
@@ -34,9 +34,6 @@ import './couches/ecarts-toits.js';
 import { chargerDetections } from './couches/detections.js';
 import { chargerPanneaux } from './couches/panneaux.js';
 import { chargerRoofer } from './couches/roofer.js';
-import './couches/foncier.js';
-import './couches/bornes.js';
-import './couches/solaire.js';
 import './interface/position.js';
 import './vegetation/textures.js';
 import './vegetation/formes.js';
@@ -60,7 +57,6 @@ import './terrain/commandes.js';
 import './interface/soleil.js';
 import './couches/scenario.js';
 import './interface/partage.js';
-import './interface/avis.js';
 import './interface/boucle.js';
 
 // Les bâtiments arrivés : ils sont construits, la caméra cadrée, puis viennent

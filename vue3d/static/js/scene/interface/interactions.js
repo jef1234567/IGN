@@ -6,9 +6,6 @@ import { camera, renderer } from '../socle/rendu.js';
 import { ciblesSurvol } from './survol.js';
 import { enMetres } from '../couches/constructions.js';
 import { GABARITS_VEHICULE, GABARITS_NAVIRE } from '../couches/detections.js';
-import { ligneDpe } from '../couches/foncier.js';
-import { infobulleBorne } from '../couches/bornes.js';
-import { ligneSolaire } from '../couches/solaire.js';
 import { portDe, formeDe } from '../vegetation/formes.js';
 import { elementSousFace } from '../vegetation/couche.js';
 import {
@@ -89,10 +86,6 @@ export function objetSous(touche) {
             + '<br><i>dessinée en rectangle, quelle que soit sa forme ; couleur de l\'eau ce jour-là</i>',
                  centre: [p.lon, p.lat], quoi: 'sur cette piscine' };
     }
-    const b = ud.borne || (ud.bornes && touche.instanceId != null ? ud.bornes[touche.instanceId] : null);
-    if (b) {
-        return { html: infobulleBorne(b), centre: [b.lon, b.lat], quoi: 'sur cette station', yAller: true };
-    }
     return null;
 }
 
@@ -132,7 +125,7 @@ renderer.domElement.addEventListener('pointermove', e => {
     const hit = raycaster.intersectObjects(ciblesSurvol, false)[0];
     const ud = hit ? hit.object.userData : null;
     if (!ud || !ud.anneau) { tip.style.display = 'none'; return; }
-    tip.innerHTML = resumeBatiment(ud) + ligneDpe(ud) + ligneSolaire(hit) + '<br><i>clic sur le bâtiment pour sa fiche</i>';
+    tip.innerHTML = resumeBatiment(ud) + '<br><i>clic sur le bâtiment pour sa fiche</i>';
     placerTip(e, r);
 });
 
@@ -185,7 +178,7 @@ function resumeBatiment(ud) {
 let tipEpingle = false;
 export function epinglerTip(ud, e, r, touche = null) {
     const fiche = '<button type="button" class="voir-fiche">Voir la fiche</button>';
-    tip.innerHTML = resumeBatiment(ud) + ligneDpe(ud) + ligneSolaire(touche) + '<br>' + fiche
+    tip.innerHTML = resumeBatiment(ud) + '<br>' + fiche
         + '<br>' + lienRecentrer(ud.anneau).trim() + '<br>' + lienStreetView(ud.anneau)
         + (ud.anneau && ud.anneau.length >= 3 ? '<br>' + lienYAller(centreAnneau(ud.anneau)).trim() : '');
     placerTip(e, r);

@@ -6,7 +6,6 @@ import { M_PAR_DEGRE_LAT, M_PAR_DEGRE_LON, toLocal } from '../socle/projection.j
 import { toitsEnPente, toitsMesures, CIBLE } from '../batiments/etat.js';
 import { noteNuage } from '../couches/nuage.js';
 import { ECART_TOIT_M, ecartsParToit } from '../couches/ecarts-toits.js';
-import { ficheDpe } from '../couches/foncier.js';
 import { echapper } from '../socle/chargement.js';
 
 /**
@@ -230,7 +229,7 @@ export function afficherFicheBatiment(ud) {
         ? '<div class="note">Coupé par le bord de la scène : ' + Math.round(100 * p.coupe.part)
           + ' % de son emprise est dessinée. Les attributs BD TOPO sont ceux du bâtiment entier.</div>'
         : '';
-    document.getElementById('fiche-batiment').innerHTML = vise + lignes + mesure + verif + coupe + ficheDpe(ud)
+    document.getElementById('fiche-batiment').innerHTML = vise + lignes + mesure + verif + coupe
         + sectionsFiche.map(section => section(ud)).join('')
         + '<div class="note">BD TOPO <code>' + echapper(p.cleabs || '—') + '</code></div>'
         + lienStreetView(ud.anneau) + lienRecentrer(ud.anneau)
