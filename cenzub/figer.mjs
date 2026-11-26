@@ -127,10 +127,16 @@ fs.copyFileSync(path.join(ICI, 'sans-sw.js'), path.join(sortie, 'sans-sw.js'));
 // réseau, ou republié par le workflow scenario.yml.
 const scenario = process.env.SCENARIO;
 if (scenario) fs.copyFileSync(scenario, path.join(sortie, 'scenario.json'));
-// HORIZON=18 : l'horizon descend au zoom 18, pour un paquet de tuiles
-// (outils/paquet_horizon.py --zoom-max 18) rangé ensuite dans le dossier.
+// HORIZON=18 (ou 16, 15) : l'horizon s'arrête à ce zoom, celui du paquet de
+// tuiles (outils/paquet_horizon.py --zoom-max N) rangé ensuite dans le dossier.
+// VASTE=1 : la navigation sur tout un camp (interface/vaste.js), relief et
+// photo aérienne seuls, ouverte à 15 km du centre, vue du sud.
+const ici = new URL(url).searchParams;
+const vaste = '&vaste=1&couches=-vegetation,-eau,-routes,-lignes,-ouvrages,-constructions,-eoliennes'
+  + `&vue=${ici.get('lat')},${ici.get('lon')},0,15000,180,40`;
 const point = new URL(url).search + (avecRoofer ? '&roofer=1' : '') + '&scenario=scenario.json'
-  + (process.env.HORIZON === '18' ? '&horizon=18' : '');
+  + (['15', '16', '18'].includes(process.env.HORIZON) ? '&horizon=' + process.env.HORIZON : '')
+  + (process.env.VASTE === '1' ? vaste : '');
 fs.writeFileSync(path.join(sortie, 'index.html'),
   fs.readFileSync(path.join(ICI, 'entree.html'), 'utf8').replace('__POINT__', point));
 fs.copyFileSync(path.join(ICI, 'servir.ps1'), path.join(sortie, 'servir.ps1'));

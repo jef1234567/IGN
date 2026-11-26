@@ -9,6 +9,7 @@ import { groupeBatiments } from '../batiments/etat.js';
 import { ySolPartout } from '../terrain/horizon.js';
 import { btnOrbit, vitesse, arreterOrbite } from './boutons.js';
 import { decalage, aideVue, placerFleches } from './decalage.js';
+import { VASTE } from './vaste.js';
 
 // Un quadricoptère au clavier, vu de derrière : il quitte la scène et survole
 // l'horizon, que la caméra entraîne avec elle. Des commandes d'arcade — la
@@ -27,7 +28,7 @@ const DRONE_INCLINAISON = 18 * Math.PI / 180;       // à pleine vitesse, pour l
 // ni clavier : l'aide le dit, et le drone a ses touches à l'écran.
 const AU_DOIGT = matchMedia('(pointer: coarse)').matches;
 export const TACTILE = AU_DOIGT || navigator.maxTouchPoints > 0;
-if (AU_DOIGT) aideVue.textContent = 'Glisser pour pivoter · pincer pour zoomer · '
+if (AU_DOIGT && !VASTE) aideVue.textContent = 'Glisser pour pivoter · pincer pour zoomer · '
     + 'toucher un bâtiment pour sa fiche';
 const AIDE_ORBITE = aideVue.textContent;
 const AIDE_DRONE = AU_DOIGT

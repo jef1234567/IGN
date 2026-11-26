@@ -51,8 +51,10 @@ export const HORIZON_ZOOM_MIN = 9;          // ~55 km de côté en France
 // ajoute un niveau (0,45 m par pixel) : la version hors réseau d'un camp, dont
 // outils/paquet_horizon.py a rangé les tuiles, se survole alors au détail de
 // l'orthophoto de la scène. En ligne, c'est quatre fois plus de tuiles près du sol.
-export const HORIZON_ZOOM_MAX =
-    new URLSearchParams(location.search).get('horizon') === '18' ? 18 : 17;
+// `&horizon=16` (ou 15) l'arrête plus haut : un camp publié en ligne survolé
+// de loin, au paquet trois fois plus léger que celui du zoom 17.
+const HORIZON_DEMANDE = Number(new URLSearchParams(location.search).get('horizon'));
+export const HORIZON_ZOOM_MAX = [15, 16, 18].includes(HORIZON_DEMANDE) ? HORIZON_DEMANDE : 17;
 export const HORIZON_MAILLES = 32;
 const HORIZON_RAYON = 60000;
 // Une tuile se divise quand la caméra est à moins de HORIZON_FINESSE fois sa
