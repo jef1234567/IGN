@@ -1,0 +1,20 @@
+name: tmp repères (retiré avant fusion)
+on:
+  push:
+    branches: [reperes-camp]
+    paths: ['.github/workflows/tmp-reperes.yml']
+permissions:
+  contents: write
+jobs:
+  lire:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with: { python-version: '3.12' }
+      - run: pip install -r requirements.txt
+      - run: python outils/paquet_horizon.py reperes zones/canjuers.geojson canjuers-reperes.geojson && ls -l canjuers-reperes.geojson
+      - run: |
+          mkdir -p /tmp/z && cp canjuers-reperes.geojson /tmp/z/ && cd /tmp/z && git init -q -b reperes-donnees
+          git add . && git -c user.name=ci -c user.email=ci@localhost commit -q -m "repères Canjuers"
+          git push -qf "https://x-access-token:${{ github.token }}@github.com/${{ github.repository }}" reperes-donnees

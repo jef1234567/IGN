@@ -24,10 +24,13 @@ sont celles que lit `altitudesTuile` pour chacune : niveau z − 5 borné à
   python outils/paquet_horizon.py zone --osm Canjuers zone.geojson
   python outils/paquet_horizon.py compter zone.geojson [--zoom-max 18]
   python outils/paquet_horizon.py lire zone.geojson site [--zoom-max 18]
+  python outils/paquet_horizon.py reperes zone.geojson reperes.geojson
 
 `zone` cherche dans OpenStreetMap (Overpass) le plus grand terrain militaire
 dont le nom contient le texte donné, et écrit son contour en GeoJSON, avec
 son centre. Une zone peut aussi être donnée en « ouest,sud,est,nord ».
+`reperes` y ajoute, à 5 km autour, les villages, lieux-dits, sommets nommés et
+routes départementales d'OpenStreetMap, que la page affiche (`&vaste=1`).
 """
 
 import concurrent.futures as cf
@@ -67,25 +70,92 @@ ENTETES = {"User-Agent": "vue3d-paquet-horizon"}
 
 # --- Zone ----------------------------------------------------------------------
 
-def zone_osm(nom, urls=URLS_OVERPASS, tours=4):
-    """Contour du plus grand terrain militaire OSM dont le nom contient `nom`."""
-    requete = (f'[out:json][timeout:120];(way["landuse"="military"]["name"~"{nom}",i];'
-               f'relation["landuse"="military"]["name"~"{nom}",i];'
-               f'way["military"]["name"~"{nom}",i];relation["military"]["name"~"{nom}",i];);out geom;')
+def overpass(requete, traiter, urls=URLS_OVERPASS, tours=4):
+    """`traiter(elements)` sur la réponse d'Overpass, de miroir en miroir.
+
+    Une réponse vide n'est pas une preuve d'absence : le 24 novembre 2026, un
+    miroir a rendu 0 élément pour Canjuers, trouvé (346 km²) une heure plus
+    tôt. `traiter` lève ValueError quand la réponse ne lui suffit pas : on
+    demande au suivant.
+    """
     erreurs = []
     for tour in range(tours):
         for url in urls:
             try:
                 r = requests.post(url, data={"data": requete}, headers=ENTETES, timeout=180)
                 r.raise_for_status()
-                return plus_grand(r.json()["elements"])
+                return traiter(r.json()["elements"])
             except (requests.RequestException, ValueError, KeyError) as e:
-                # Une réponse vide n'est pas une preuve d'absence : le 24
-                # novembre 2026, un miroir a rendu 0 élément pour Canjuers,
-                # trouvé (346 km²) une heure plus tôt. On demande au suivant.
                 erreurs.append(f"{url} : {e}")
         time.sleep(30 * (tour + 1))
     raise RuntimeError("Overpass indisponible :\n" + "\n".join(erreurs))
+
+
+def zone_osm(nom, urls=URLS_OVERPASS, tours=4):
+    """Contour du plus grand terrain militaire OSM dont le nom contient `nom`."""
+    requete = (f'[out:json][timeout:120];(way["landuse"="military"]["name"~"{nom}",i];'
+               f'relation["landuse"="military"]["name"~"{nom}",i];'
+               f'way["military"]["name"~"{nom}",i];relation["military"]["name"~"{nom}",i];);out geom;')
+    return overpass(requete, plus_grand, urls, tours)
+
+
+# Les repères d'un camp, pour s'y retrouver vu d'en haut : lieux habités,
+# lieux-dits, sommets nommés, et routes départementales et nationales avec
+# leur numéro. MARGE_REPERES autour du contour : les villages du pourtour
+# (Comps-sur-Artuby, Bargème…) sont ceux qu'on connaît.
+MARGE_REPERES_M = 5000
+LIEUX = ("city", "town", "village", "hamlet", "isolated_dwelling", "locality")
+# 20 m : une route départementale lue au zoom 16 (1,8 m par pixel) ne s'en
+# écarte pas à l'œil, et le fichier reste de l'ordre de quelques centaines de Ko.
+SIMPLIFIER_DEG = 0.0002
+
+
+def reperes_osm(zone, urls=URLS_OVERPASS, tours=4):
+    """Repères OSM autour de la zone, en GeoJSON (FeatureCollection)."""
+    autour = elargir(zone, MARGE_REPERES_M)
+    o, s, e, n = autour.bounds
+    bb = f"{s:.5f},{o:.5f},{n:.5f},{e:.5f}"
+    requete = (f'[out:json][timeout:180];('
+               f'node["place"~"^({"|".join(LIEUX)})$"]["name"]({bb});'
+               f'node["natural"="peak"]["name"]({bb});'
+               f'way["highway"]["ref"~"^[DN] ?[0-9]"]({bb}););out geom;')
+
+    def traiter(elements):
+        fc = reperes_depuis(elements, autour)
+        if not any(f["properties"]["type"] != "route" for f in fc["features"]):
+            raise ValueError("aucun lieu nommé dans la réponse")
+        return fc
+    return overpass(requete, traiter, urls, tours)
+
+
+def reperes_depuis(elements, autour):
+    """Les éléments Overpass (`out geom`) gardés dans `autour`, en GeoJSON."""
+    dedans = prep(autour)
+    features = []
+    for el in elements:
+        t = el.get("tags", {})
+        if el["type"] == "node":
+            point = shape({"type": "Point", "coordinates": (el["lon"], el["lat"])})
+            if not dedans.contains(point):
+                continue
+            genre = "sommet" if t.get("natural") == "peak" else t.get("place")
+            prop = {"type": genre, "nom": t["name"]}
+            if genre == "sommet" and t.get("ele"):
+                prop["ele"] = t["ele"]
+            features.append({"type": "Feature", "properties": prop,
+                             "geometry": {"type": "Point", "coordinates": [round(el["lon"], 5), round(el["lat"], 5)]}})
+        elif el["type"] == "way" and len(el.get("geometry", [])) >= 2:
+            ligne = LineString([(p["lon"], p["lat"]) for p in el["geometry"]]).intersection(autour)
+            if ligne.is_empty:
+                continue
+            ligne = ligne.simplify(SIMPLIFIER_DEG)
+            morceaux = [ligne] if ligne.geom_type == "LineString" else [g for g in getattr(ligne, "geoms", []) if g.geom_type == "LineString"]
+            for m in morceaux:
+                features.append({"type": "Feature",
+                                 "properties": {"type": "route", "ref": t["ref"].replace(" ", ""), "nom": t.get("name", "")},
+                                 "geometry": {"type": "LineString",
+                                              "coordinates": [[round(x, 5), round(y, 5)] for x, y in m.coords]}})
+    return {"type": "FeatureCollection", "features": features}
 
 
 def plus_grand(elements):
@@ -259,6 +329,16 @@ def main(argv):
         km2 = zone.area * M_PAR_DEGRE ** 2 * math.cos(math.radians(c.y)) / 1e6
         print(f"{nom} : {km2:.0f} km², centre {c.y:.5f}, {c.x:.5f}, emprise {zone.bounds}")
         print(f"CENTRE={c.y:.5f},{c.x:.5f}")
+        return 0
+    if len(args) == 3 and args[0] == "reperes":
+        fc = reperes_osm(lire_zone(args[1]))
+        fc["licence"] = "© contributeurs OpenStreetMap, ODbL"
+        with open(args[2], "w", encoding="utf-8") as f:
+            json.dump(fc, f, ensure_ascii=False, separators=(",", ":"))
+        genres = {}
+        for ft in fc["features"]:
+            genres[ft["properties"]["type"]] = genres.get(ft["properties"]["type"], 0) + 1
+        print(", ".join(f"{g} : {n}" for g, n in sorted(genres.items())))
         return 0
     if len(args) == 2 and args[0] == "compter":
         ortho, alti = inventaire(lire_zone(args[1]), zoom_max)
