@@ -75,7 +75,10 @@ const NOTE_DEPART = note.textContent;
 const rayon = new THREE.Raycaster();
 function visible(o) {
     for (let p = o; p; p = p.parent) if (!p.visible) return false;
-    return true;
+    // Les volumes gardés pour la fiche d'un ouvrage ajouré, dessiné en
+    // points (couches/nuage), ont un matériau invisible : ni obstacle ni calque.
+    const m = o.material;
+    return !(Array.isArray(m) ? m.every(x => x.visible === false) : m && m.visible === false);
 }
 const sols = () => [terrain && terrain.mesh, anneauRelief && anneauRelief.mesh].filter(Boolean);
 /** Ce qui peut masquer : le sol, et les bâtiments et la végétation affichés. */
@@ -418,7 +421,7 @@ void main() { gl_FragColor = vec4(distance(vMonde, uO) / uLoin, 0.0, 0.0, 1.0); 
 const matCarte = new THREE.ShaderMaterial({
     uniforms: {
         uDistances: { value: null }, uO: { value: new THREE.Vector3() }, uLoin: { value: LOIN },
-        uHauteur: { value: 1 }, uPortee: { value: 1500 }, uQuiMeVoit: { value: 0 },
+        uHauteur: { value: 1 }, uPortee: { value: 1500 }, uQuiMeVoit: { value: 0 }, uOpacite: { value: 1 },
     },
     vertexShader: `varying vec3 vMonde;
 void main() {
@@ -428,7 +431,7 @@ void main() {
 }`,
     fragmentShader: `uniform samplerCube uDistances;
 uniform vec3 uO;
-uniform float uLoin, uHauteur, uPortee, uQuiMeVoit;
+uniform float uLoin, uHauteur, uPortee, uQuiMeVoit, uOpacite;
 varying vec3 vMonde;
 void main() {
   vec3 d = vMonde + vec3(0.0, uHauteur, 0.0) - uO;
@@ -440,12 +443,18 @@ void main() {
   vec4 c;
   if (uQuiMeVoit > 0.5) c = vu ? vec4(0.90, 0.20, 0.18, 0.50) : vec4(0.20, 0.75, 0.35, 0.18);
   else c = vu ? vec4(0.20, 0.80, 0.35, 0.42) : vec4(0.85, 0.20, 0.18, 0.30);
-  if (r > uPortee - 2.0 * fwidth(r) - 1.0) c = vec4(1.0, 1.0, 1.0, 0.9);
-  gl_FragColor = c;
+  if (uHauteur > 0.0 && r > uPortee - 2.0 * fwidth(r) - 1.0) c = vec4(1.0, 1.0, 1.0, 0.9);
+  gl_FragColor = vec4(c.rgb, c.a * uOpacite);
 }`,
     transparent: true, depthWrite: false,
     polygonOffset: true, polygonOffsetFactor: -2, polygonOffsetUnits: -4,
 });
+// Sur les bâtiments, le point jugé est la façade ou le toit lui-même, sans
+// hauteur ajoutée : une fenêtre, un toit d'où l'on voit, ou d'où l'on est vu.
+// Mêmes uniformes, partagés, sauf la hauteur.
+const matCarteBati = matCarte.clone();
+matCarteBati.uniforms = { ...matCarte.uniforms, uHauteur: { value: 0 } };
+matCarteBati.side = THREE.DoubleSide;
 const calques = new THREE.Group();
 calques.visible = false;
 scene.add(calques);
@@ -497,15 +506,17 @@ function dessinerCarte() {
     u.uPortee.value = h.portee;
     u.uQuiMeVoit.value = carte === 'vu' ? 1 : 0;
     calques.clear();
-    for (const s of sols()) {
-        const m = new THREE.Mesh(s.geometry, matCarte);
+    const calquer = (s, materiau) => {
+        const m = new THREE.Mesh(s.geometry, materiau);
         m.matrixAutoUpdate = false;
         s.updateMatrixWorld();
         m.matrix.copy(s.matrixWorld);
         m.renderOrder = 10;
         m.frustumCulled = false;
         calques.add(m);
-    }
+    };
+    for (const s of sols()) calquer(s, matCarte);
+    groupeBatiments.traverse(o => { if (o.isMesh && !o.isInstancedMesh && visible(o)) calquer(o, matCarteBati); });
     calques.visible = true;
     legende.hidden = false;
     legende.innerHTML = carte === 'vues'
@@ -572,6 +583,9 @@ function entrerRegard() {
     controls.enabled = false;
     controls.maxPolarAngle = Math.PI;
     marqueurPoste.visible = false;      // la caméra est dedans
+    // À hauteur d'homme, le calque couvre presque tout le champ : pâli de
+    // moitié, il laisse voir le sol et les façades dessous.
+    matCarte.uniforms.uOpacite.value = 0.5;
     camera.fov = FOV_NU;
     camera.updateProjectionMatrix();
     btnRegard.classList.add('on');
@@ -588,6 +602,7 @@ function sortirRegard() {
     controls.maxPolarAngle = a.polaire;
     controls.enabled = true;
     marqueurPoste.visible = true;
+    matCarte.uniforms.uOpacite.value = 1;
     btnRegard.classList.remove('on');
     reticule.hidden = hud.hidden = true;
 }

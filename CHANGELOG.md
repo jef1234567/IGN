@@ -13,6 +13,16 @@ messages de commit et dans les commentaires des modules.
 
 ## Scène v16 — 21 novembre 2026
 
+### Modifié
+
+- **Préparation de mission : les bâtiments en vert et rouge** (26 novembre
+  2026). Les cartes « ce que je vois » et « qui me voit » colorent aussi
+  les façades et les toits, jugés en eux-mêmes : une fenêtre d'où l'on voit,
+  ou d'où l'on est vu. En vue du poste, le calque est pâli de moitié pour
+  laisser voir le sol et les façades. Le cadre du profil n'apparaît plus vide
+  avant la première ligne de vue. Les volumes invisibles des ouvrages
+  ajourés (dessinés en points) ne masquent plus rien.
+
 ### Ajouté
 
 - **Préparation de mission** (26 novembre 2026), section du panneau de la vue
