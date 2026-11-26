@@ -26,6 +26,15 @@ messages de commit et dans les commentaires des modules.
   débattement, et la ligne de vue dit « je peux le traiter » ou non. Décocher
   « Ligne de vue » efface la ligne tracée.
 
+- **Un camp en ligne, à côté de CENZUB** (26 novembre 2026) : l'option
+  « publier » du workflow « Camp hors réseau (horizon) » range le dossier du
+  camp sur la branche `site-<camp>`, que le workflow de CENZUB publie sous
+  `<camp>/` dans le même site GitHub Pages (un seul site par dépôt, 1 Go au
+  plus : le zoom 17 est conseillé, le zoom 18 de Canjuers fait 852 Mo).
+  Chaque dossier garde son service worker : celui de CENZUB, qui couvre aussi
+  le sous-dossier, n'est plus pris pour le sien, et sans service worker les
+  tuiles de l'horizon sont lues dans le paquet.
+
 ### Modifié
 
 - **Préparation de mission : les bâtiments en vert et rouge** (26 novembre

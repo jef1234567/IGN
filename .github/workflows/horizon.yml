@@ -22,9 +22,14 @@ on:
       scenario:
         description: "Tableur de scénario dans le dépôt (vide : aucun)"
         default: ""
+      publier:
+        description: "Publier aussi en ligne, à côté de CENZUB (GitHub Pages, 1 Go au plus : zoom 17 conseillé)"
+        type: boolean
+        default: false
 
 permissions:
   contents: write
+  actions: write
 
 concurrency:
   group: horizon
@@ -135,3 +140,26 @@ jobs:
           path: site
           # Des JPEG et des altitudes déjà denses : les recompresser ne gagne rien.
           compression-level: 1
+      # En ligne : le dossier part sur la branche site-<camp>, que cenzub.yml
+      # range sous <camp>/ dans le site de CENZUB avant de le publier. Un seul
+      # site Pages par dépôt, et 1 Go au plus : 852 Mo pour Canjuers au zoom
+      # 18 le 24 novembre 2026, d'où le zoom 17 conseillé pour la version en
+      # ligne.
+      - name: Publier en ligne (branche site-<camp>, puis cenzub.yml)
+        if: ${{ inputs.publier }}
+        env:
+          CAMP: ${{ inputs.camp || 'Canjuers' }}
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          NOM=site-$(echo "$CAMP" | tr '[:upper:]' '[:lower:]')
+          TAILLE=$(du -sm site | cut -f1)
+          echo "Dossier : $TAILLE Mo"
+          if [ "$TAILLE" -gt 900 ]; then
+            echo "::error::$TAILLE Mo : trop pour GitHub Pages (1 Go avec CENZUB). Relancer avec zoom_max 17."
+            exit 1
+          fi
+          cp -r site /tmp/publie && cd /tmp/publie && rm -f apercu.png && git init -q -b "$NOM"
+          git add -A && git -c user.name=ci -c user.email=ci@localhost commit -q -m "$CAMP en ligne ${GITHUB_SHA::7}"
+          git push -qf "https://x-access-token:${GH_TOKEN}@github.com/${{ github.repository }}" "$NOM"
+          cd "$GITHUB_WORKSPACE"
+          gh workflow run cenzub.yml --ref main -R "${{ github.repository }}"
