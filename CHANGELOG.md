@@ -34,6 +34,11 @@ messages de commit et dans les commentaires des modules.
   débattement, et la ligne de vue dit « je peux le traiter » ou non. Décocher
   « Ligne de vue » efface la ligne tracée.
 
+- **Une ancienne adresse ne montre plus « Scène indisponible »** (26 novembre
+  2026) : dans un dossier figé (CENZUB, un camp), le service worker renvoie à
+  l'entrée une page ouverte sur un point que le dossier n'a pas enregistré
+  (lien d'une version précédente, entrée restée en cache après une
+  republication), et relit l'entrée sans cache.
 - **Naviguer sur tout un camp** (26 novembre 2026) : `&vaste=1`, posé par
   le workflow « Camp hors réseau (horizon) », change la navigation : glisser
   déplace le point visé sur le sol, le clic droit pivote, la molette recule
