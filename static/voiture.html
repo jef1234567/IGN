@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="utf-8" />
+    <link rel="icon" href="static/favicon-32.png" sizes="32x32" type="image/png" />
+    <link rel="icon" href="static/favicon.svg" type="image/svg+xml" />
+    <link rel="apple-touch-icon" href="static/apple-touch-icon.png" />
+    <!-- Pas de zoom du navigateur : les doigts règlent le recul de la caméra. -->
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover" />
+    <meta name="mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="theme-color" content="#1f2328" />
+    <title>Vue 3D IGN · en voiture</title>
+    <link rel="stylesheet" href="static/css/voiture.css" />
+</head>
+<body>
+<div id="vue" aria-label="Vue 3D qui suit la voiture"></div>
+
+<div id="rue" class="cartouche" hidden><span id="rue-numero" class="numero" hidden></span><b id="rue-nom"></b></div>
+<div id="etat" class="cartouche"><span class="rond perdu"></span><span id="etat-gps">Position attendue</span><br><span id="etat-carres"></span></div>
+<button type="button" id="boussole" class="cartouche" title="Le nord ; un appui remet la vue derrière la voiture" aria-label="Boussole">
+    <svg viewBox="0 0 52 52" aria-hidden="true"><g id="aiguille">
+        <polygon points="26,8 31,26 21,26" fill="#d9453b"/><polygon points="26,44 31,26 21,26" fill="#c9cdd2"/>
+        <text x="26" y="7.5" text-anchor="middle" font-size="7" font-weight="700" fill="#e8eaed" font-family="system-ui">N</text>
+    </g></svg>
+</button>
+<div id="compteur" class="cartouche" aria-live="off"><b id="vitesse">–</b><small>km/h</small></div>
+<div id="panneaux">
+    <div id="limite" hidden><div class="panneau"><b id="limite-v"></b></div><small id="limite-source"></small></div>
+    <div id="signal" hidden><svg viewBox="0 0 68 68" aria-hidden="true">
+        <g class="stop"><polygon points="23.4,6 44.6,6 62,23.4 62,44.6 44.6,62 23.4,62 6,44.6 6,23.4" fill="#c8102e" stroke="#fff" stroke-width="3"/>
+            <text x="34" y="35" text-anchor="middle" dominant-baseline="middle" fill="#fff" font-size="16" font-weight="800" font-family="system-ui, sans-serif">STOP</text></g>
+        <g class="cedez"><polygon points="5,10 63,10 34,61" fill="#fff" stroke="#c8102e" stroke-width="7" stroke-linejoin="round"/></g>
+        <g class="feu"><rect x="21" y="3" width="26" height="62" rx="6" fill="#1b1d20" stroke="#5b6168" stroke-width="2"/>
+            <circle cx="34" cy="16" r="7" fill="#ff3b30"/><circle cx="34" cy="34" r="7" fill="#ffb000"/><circle cx="34" cy="52" r="7" fill="#2fd158"/></g>
+    </svg><small id="signal-d"></small></div>
+</div>
+<button type="button" id="b-signaler" class="bouton" aria-label="Signaler un défaut de l'affichage"
+        title="Signaler un défaut de l'affichage : une capture de l'écran, la position et l'état du sol partent au serveur, pour l'analyse">
+    <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3.5L2.5 20h19z"/><path d="M12 9.5v5M12 17.4v.1"/></svg></button>
+<div id="boutons">
+    <button type="button" id="b-vue" class="bouton" title="Vue de derrière (3D) ou de dessus (2D)">2D</button>
+    <button type="button" id="b-fond" class="bouton" title="Fond : photographie aérienne ou plan IGN">Plan</button>
+    <button type="button" id="b-arbres" class="bouton petit on" title="Les arbres le long de la route, mesurés au LiDAR HD">Arbres</button>
+    <button type="button" id="b-bornes" class="bouton petit on" title="Les bornes de recharge (base nationale des IRVE, data.gouv.fr) : un toucher sur une borne dit qui l'exploite, ses prises, son accès">Bornes</button>
+    <button type="button" id="b-moins" class="bouton" title="Reculer la caméra" aria-label="Reculer">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 12h12"/></svg></button>
+    <button type="button" id="b-plus" class="bouton" title="Rapprocher la caméra" aria-label="Rapprocher">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 12h12M12 6v12"/></svg></button>
+    <button type="button" id="b-plein" class="bouton" title="Plein écran" aria-label="Plein écran" hidden>
+        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 9V4h5M20 9V4h-5M4 15v5h5M20 15v5h-5"/></svg></button>
+    <a id="b-quitter" class="bouton" href="./" title="Quitter la voiture : la scène détaillée là où vous êtes" aria-label="Quitter">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"/></svg></a>
+</div>
+<div id="annonce" class="cartouche" hidden></div>
+<div id="borne" class="cartouche" hidden aria-live="polite"></div>
+<div id="accueil" hidden><div class="cartouche">
+    <h1><img src="static/favicon.svg" alt="" />En voiture</h1>
+    <div id="accueil-texte"></div>
+    <div class="actions" id="accueil-actions"></div>
+</div></div>
+<div id="credits">© IGN : BD TOPO, BD ORTHO, Plan IGN, RGE ALTI, LiDAR HD, BD Forêt · limitations et panneaux © OpenStreetMap (ODbL)</div>
+
+<script type="importmap">
+{
+  "imports": {
+    "three": "https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js"
+  }
+}
+</script>
+<script type="module" src="static/js/voiture/main.js"></script>
+</body>
+</html>

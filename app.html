@@ -1,0 +1,529 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<script src="sans-sw.js"></script>
+    <meta charset="utf-8" />
+    <!-- Le logo, la Tuile (docs/logo/). Le PNG sert aux navigateurs sans
+         favicon SVG ; il porte sa taille pour que Chrome garde le SVG, qui
+         reste net à toute densité d'écran. iOS arrondit lui-même les coins
+         de l'icône d'écran d'accueil, d'où un carré plein. -->
+    <link rel="icon" href="static/favicon-32.png" sizes="32x32" type="image/png" />
+    <link rel="icon" href="static/favicon.svg" type="image/svg+xml" />
+    <link rel="apple-touch-icon" href="static/apple-touch-icon.png" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <!-- Ajoutée à l'écran d'accueil, la page s'ouvre sans la barre du
+         navigateur : le seul plein écran de l'iPhone, qui n'a pas l'API. -->
+    <meta name="mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="theme-color" content="#1f2328" />
+    <title>Vue 3D IGN</title>
+    <link rel="stylesheet" href="static/css/scene.css" />
+    <script>
+    // Petit écran, ou plein écran : la vue prend toute la place et le panneau
+    // devient un tiroir (html.tiroir). Posée ici, avant le premier rendu : le
+    // module, qui attend three.js, l'aurait posée après un premier affichage
+    // à deux colonnes. 780 px : en dessous, le panneau de 300 px laissait moins
+    // de 480 px à la vue ; 520 px de haut : un téléphone tenu en paysage.
+    (() => {
+        const petit = matchMedia('(max-width: 780px), (max-height: 520px)');
+        const racine = document.documentElement;
+        window.majTiroir = () => {
+            const tiroir = petit.matches || racine.classList.contains('plein-ecran');
+            racine.classList.toggle('tiroir', tiroir);
+            if (!tiroir) racine.classList.remove('tiroir-ouvert');
+        };
+        window.majTiroir();
+        petit.addEventListener('change', window.majTiroir);
+    })();
+    </script>
+</head>
+<body>
+<div id="app">
+    <div id="panel">
+        <header>
+            <button type="button" id="btn-fermer-tiroir" aria-label="Fermer le panneau">×</button>
+            <h1><svg class="logo" viewBox="9.03 18.40 81.94 63.25" aria-hidden="true">
+                <polygon points="11.03,51.90 50,74.40 50,79.65 11.03,57.15" fill="#a9b0b7"/>
+                <polygon points="88.97,51.90 50,74.40 50,79.65 88.97,57.15" fill="#7d858d"/>
+                <g fill="#e8eaed"><polygon points="50,29.40 62.19,36.44 50,43.48 37.81,36.44"/><polygon points="36.21,37.36 48.40,44.40 37.01,50.98 24.82,43.94"/><polygon points="23.22,44.86 35.41,51.90 23.22,58.94 11.03,51.90"/><polygon points="63.79,37.36 75.18,43.94 62.99,50.98 51.60,44.40"/><polygon points="50,45.32 61.39,51.90 50,58.48 38.61,51.90"/><polygon points="37.01,52.82 48.40,59.40 36.21,66.44 24.82,59.86"/><polygon points="76.78,44.86 88.97,51.90 76.78,58.94 64.59,51.90"/><polygon points="62.99,52.82 75.18,59.86 63.79,66.44 51.60,59.40"/><polygon points="50,60.32 62.19,67.36 50,74.40 37.81,67.36"/></g>
+                <polygon points="39.61,51.90 50,57.90 50,32.40 39.61,26.40" fill="#e07b00"/>
+                <polygon points="60.39,51.90 50,57.90 50,32.40 60.39,26.40" fill="#af6000"/>
+                <polygon points="50,20.40 60.39,26.40 50,32.40 39.61,26.40" fill="#e9a34d"/>
+            </svg>Vue 3D IGN</h1>
+            <div id="nom-point" hidden></div>
+            <div class="sub" id="coord-point">—</div>
+            <a href="https://github.com/ysimonx/vue-3d-ign#readme" target="_blank" rel="noopener">📐 Méthode et sources ↗</a>
+        </header>
+
+        <div class="section">
+            <h2>Affichage</h2>
+            <div class="toggles">
+                <button class="toggle" id="t-orbit">Orbite</button>
+                <button class="toggle on" id="t-fond">Photo aérienne</button>
+                <button class="toggle on" id="t-relief">Relief</button>
+                <button class="toggle on" id="t-horizon" title="Le paysage alentour jusqu'à 60 km, en tuiles : orthophoto et RGE ALTI de l'IGN">Horizon</button>
+                <button class="toggle" id="t-veg">Végétation</button>
+                <button class="toggle on" id="t-eau">Eau</button>
+                <button class="toggle on" id="t-routes">Routes</button>
+                <button class="toggle on" id="t-lignes">Lignes HT</button>
+                <button class="toggle on" id="t-eoliennes" hidden title="Éoliennes d'OpenStreetMap, jusqu'à l'anneau : moyeu, rotor, modèle">Éoliennes</button>
+                <button class="toggle on" id="t-constructions" hidden title="Réservoirs, torchères, cheminées, antennes et mâts de la BD TOPO">Réservoirs, mâts</button>
+                <button class="toggle on" id="t-ouvrages" hidden title="Murs, ponts, voies ferrées et terrains de sport de la BD TOPO">Murs, ponts, rails</button>
+                <button class="toggle on" id="t-vehicules" hidden title="Véhicules vus sur l'orthophoto, le jour de la prise de vue">Véhicules</button>
+                <button class="toggle on" id="t-piscines" hidden title="Piscines vues sur l'orthophoto">Piscines</button>
+                <button class="toggle on" id="t-navires" hidden title="Bateaux vus sur l'orthophoto, sur l'eau">Bateaux</button>
+                <button class="toggle on" id="t-panneaux" hidden title="Panneaux solaires du registre OpenPVMapper">Panneaux solaires</button>
+            </div>
+            <div class="row">
+                <label for="speed" title="Orbite : degrés par seconde. Drone : vitesse de pointe, 3 m/s par cran.">vitesse</label>
+                <input type="range" id="speed" min="1" max="20" step="1" value="6" />
+            </div>
+            <div class="row">
+                <label for="heure">heure</label>
+                <input type="range" id="heure" min="0" max="24" step="0.25" value="12" />
+                <b id="s-heure">12:00</b>
+            </div>
+            <div class="row">
+                <label for="saison">saison</label>
+                <input type="range" id="saison" min="1" max="365" step="1" value="172" />
+                <b id="s-saison">—</b>
+            </div>
+            <div class="note" style="margin-top:2px">
+                <a href="#" class="saison-cran" data-mois="12" data-jour="21">21 déc.</a> ·
+                <a href="#" class="saison-cran" data-mois="3" data-jour="21">équinoxe</a> ·
+                <a href="#" class="saison-cran" data-mois="6" data-jour="21">21 juin</a> ·
+                <a href="#" id="saison-aujourdhui">aujourd’hui</a>
+            </div>
+        </div>
+
+        <div class="section" id="sec-meteo">
+            <h2>Météo</h2>
+            <div class="toggles">
+                <button class="toggle" id="t-meteo" title="Vent, rafales, température et pluie au centre de la scène, pour les 12 prochaines heures (Open-Meteo, avec du réseau)">Météo et vent</button>
+            </div>
+            <div id="meteo-resultat" hidden></div>
+            <div class="note" id="meteo-note">Seulement avec du réseau.</div>
+        </div>
+
+        <div class="section" id="sec-mission">
+            <h2>Préparation de mission</h2>
+            <div class="toggles">
+                <button class="toggle" id="mi-poser" title="Cliquer sur le terrain, ou sur la façade ou le toit d'un bâtiment, pour y poser un nouveau poste (4 au plus)">Nouveau poste</button>
+                <button class="toggle" id="mi-deplacer" disabled title="Cliquer : le poste choisi y est déplacé">Déplacer</button>
+                <button class="toggle" id="mi-ldv" title="Cliquer sur le terrain ou un bâtiment : ligne de vue du poste choisi à ce point, avec son profil">Ligne de vue</button>
+                <button class="toggle" id="mi-mesurer" title="Deux clics : distance, azimut, dénivelé et coordonnées MGRS">Mesurer</button>
+            </div>
+            <div id="mi-postes" class="toggles" style="margin-top:8px"></div>
+            <div class="row mi-hauteurs">
+                <label for="mi-type-moi">poste</label>
+                <select id="mi-type-moi"></select>
+            </div>
+            <div class="row mi-hauteurs" id="mi-ligne-etage" hidden>
+                <label for="mi-etage" title="Hauteur du plancher : 3 m par étage">étage</label>
+                <select id="mi-etage"></select>
+            </div>
+            <div class="row mi-hauteurs">
+                <label for="mi-optique-moi" title="Hauteur de l'œil ou de l'optique au-dessus du sol, ou du plancher">optique</label>
+                <input type="number" id="mi-optique-moi" min="0" max="50" step="0.1" /> <span class="mi-u">m</span>
+                <label for="mi-expo-moi" title="Hauteur du point le plus haut qui dépasse : toit de tourelle, tête">exposé</label>
+                <input type="number" id="mi-expo-moi" min="0" max="50" step="0.1" /> <span class="mi-u">m</span>
+            </div>
+            <div class="row mi-hauteurs">
+                <label for="mi-site-min" title="Débattement en site de l'arme, en degrés : ce qu'elle peut traiter. Vide : sans limite.">site</label>
+                <input type="number" id="mi-site-min" min="-90" max="90" step="1" placeholder="—" /> <span class="mi-u">à</span>
+                <input type="number" id="mi-site-max" min="-90" max="90" step="1" placeholder="—" /> <span class="mi-u">°</span>
+            </div>
+            <div class="row mi-hauteurs">
+                <label for="mi-type-lui">en face</label>
+                <select id="mi-type-lui"></select>
+            </div>
+            <div class="row mi-hauteurs">
+                <label for="mi-optique-lui">optique</label>
+                <input type="number" id="mi-optique-lui" min="0" max="50" step="0.1" /> <span class="mi-u">m</span>
+                <label for="mi-expo-lui">exposé</label>
+                <input type="number" id="mi-expo-lui" min="0" max="50" step="0.1" /> <span class="mi-u">m</span>
+            </div>
+            <div class="row">
+                <label for="mi-portee" title="Au-delà, rien n'est calculé ni coloré">portée</label>
+                <input type="number" id="mi-portee" min="50" max="5000" step="50" value="1500" /> <span class="mi-u">m</span>
+                <label for="mi-cumul" title="La carte réunit tous les postes ; décoché, le poste choisi seul">tous les postes</label>
+                <input type="checkbox" id="mi-cumul" checked />
+            </div>
+            <div class="toggles" style="margin-top:8px">
+                <button class="toggle" id="mi-vues" disabled title="En vert, ce que je vois et peux traiter ; en orange, vu mais hors du débattement de l'arme ; en rouge, masqué">Ce que je vois</button>
+                <button class="toggle" id="mi-vu" disabled title="En rouge, le terrain et les façades d'où un ennemi voit un de mes postes">Qui me voit</button>
+                <button class="toggle" id="mi-regard" disabled title="La caméra à l'optique du poste choisi : glisser pour tourner, molette pour les jumelles, Échap pour sortir">Vue du poste</button>
+            </div>
+            <canvas id="mi-profil" width="300" height="110" hidden></canvas>
+            <div id="mi-resultat"></div>
+            <div class="note" id="mi-note">Pose un poste sur le terrain ou sur un bâtiment, puis demande ce qu'il voit. Hauteurs et débattements : ordres de grandeur, à corriger.</div>
+        </div>
+
+        <div class="section" id="sec-brechage">
+            <h2>Bréchage</h2>
+            <div class="toggles">
+                <button class="toggle" id="br-tracer" title="Cliquer les points de l'obstacle sur le terrain ; double-clic sur le dernier pour finir">Tracer l'obstacle</button>
+                <button class="toggle" id="br-effacer" disabled>Effacer</button>
+            </div>
+            <div class="row br-types">
+                <label><input type="checkbox" id="br-barbeles" checked /> barbelés</label>
+                <label><input type="checkbox" id="br-mines" checked /> mines</label>
+                <label title="2 m de haut : il masque ce qui est derrière lui"><input type="checkbox" id="br-merlon" /> merlon</label>
+            </div>
+            <div class="row">
+                <label for="br-oeil" title="Hauteur de l'œil de l'observateur, partout sur la carte">œil</label>
+                <select id="br-oeil"></select>
+            </div>
+            <div class="row">
+                <label for="br-portee" title="La carte s'étend jusqu'à cette distance de l'obstacle (3 000 m au plus)">portée</label>
+                <input type="number" id="br-portee" min="200" max="3000" step="100" value="1500" /> <span class="mi-u">m</span>
+            </div>
+            <div class="toggles" style="margin-top:8px">
+                <button class="toggle" id="br-chercher" disabled title="De chaque endroit alentour, la part de l'obstacle qu'on y voit, et les dix meilleurs endroits">Calculer l'intervisibilité</button>
+            </div>
+            <div id="br-legende" hidden><span>voit</span><i></i><span>peu</span><span>tout</span></div>
+            <div id="br-resultat"></div>
+            <div class="note" id="br-note">Trace l'obstacle, puis calcule : la carte montre d'où l'on en voit la plus grande part, et numérote les dix meilleurs endroits.</div>
+        </div>
+
+        <div class="section" id="sec-moi" hidden>
+            <h2>Ma position</h2>
+            <div class="stat"><span>précision</span><b id="m-prec">—</b></div>
+            <div class="stat"><span>distance au point</span><b id="m-dist">—</b></div>
+            <div class="note" id="m-note"></div>
+        </div>
+
+        <div class="section">
+            <h2>Bâtiment</h2>
+            <div id="fiche-batiment"></div>
+            <div class="note" id="note-batiment">Chargement des bâtiments…</div>
+        </div>
+
+        <!-- Le menu « Avancé » : réglages et mesures qui ne servent pas à
+             l'entraînement, gardés repliés pour alléger le panneau. -->
+        <details id="avance">
+            <summary>Avancé</summary>
+            <div class="section">
+                <h2>Bâti et fonds</h2>
+                <div class="toggles">
+                    <button class="toggle on" id="t-roof">Toits en pente</button>
+                    <button class="toggle on" id="t-mesure" title="Pans mesurés au LiDAR là où le toit résumé s'en écarte de plus de 0,7 m">Toits mesurés</button>
+                    <button class="toggle" id="t-roofer" hidden title="Les bâtiments reconstruits par roofer (3DBAG) à partir du nuage LiDAR HD, à la place de ceux de la vue">Toits roofer</button>
+                    <button class="toggle on" id="t-monuments" hidden title="Parties de bâtiments modélisées dans OpenStreetMap (building:part)">Monuments OSM</button>
+                    <button class="toggle" id="t-plan">Plan IGN</button>
+                    <button class="toggle" id="t-nuage" hidden title="Tout le bâti en points du nuage LiDAR HD ; les ouvrages ajourés, comme la tour Eiffel, y sont toujours">Nuage LiDAR</button>
+                </div>
+                <div class="row">
+                    <label for="exag">exagération Z</label>
+                    <input type="range" id="exag" min="1" max="5" step="0.5" value="1" />
+                    <b id="s-exag">1</b>
+                </div>
+            </div>
+            <div class="section">
+                <h2>Export BIM</h2>
+                <div class="toggles">
+                    <button class="toggle on" id="x-relief">Relief</button>
+                    <button class="toggle on" id="x-batiments">Bâtiments</button>
+                    <button class="toggle on" id="x-arbres">Arbres</button>
+                    <button class="toggle" id="x-masses" title="Sursol ni bâti ni végétal : murs, abris, véhicules…">Masses de sursol</button>
+                </div>
+                <button type="button" class="lien-ext" id="btn-ifc" data-format="ifc"
+                        title="Pour Revit, ArchiCAD, Vectorworks, Allplan…">⬇ IFC 4</button>
+                <button type="button" class="lien-ext" id="btn-citygml" data-format="citygml"
+                        title="Pour les SIG et les maquettes urbaines : FME, 3DCityDB, FZKViewer…">⬇ CityGML 2.0</button>
+                <div class="note" id="note-export">
+                    IFC pour la conception (Revit, ArchiCAD…), CityGML pour les SIG.
+                    Les bâtiments tels qu'affichés (toits en pente, mesurés, monuments
+                    OSM), à l'échelle, en Lambert-93 et altitudes NGF. Une maquette de
+                    contexte, pas un relevé.
+                </div>
+            </div>
+        </details>
+        <!-- Mesures du panneau retirées de la vue le 26 novembre 2026 (inutiles
+             à l'entraînement) : gardées cachées, car les modules y écrivent et
+             outils/essai-navigateur.mjs y lit l'état du chargement. -->
+        <div id="mesures" hidden>
+            <div class="section">
+                <h2>Soleil</h2>
+                <div class="stat"><span>date</span><b id="s-date">—</b></div>
+                <div class="stat"><span>azimut</span><b id="s-azimut">—</b></div>
+                <div class="stat"><span>hauteur</span><b id="s-hauteur">—</b></div>
+                <div class="note" id="note-soleil"></div>
+            </div>
+            <div class="section">
+                <h2>Bâtiments</h2>
+                <div class="stat"><span>chargés</span><b id="s-total">—</b></div>
+                <div class="stat"><span>avec toit mesuré</span><b id="s-roof">—</b></div>
+                <div class="stat"><span>toit mesuré au LiDAR</span><b id="s-lidar">—</b></div>
+                <div class="stat"><span>dénivelé médian</span><b id="s-slope">—</b></div>
+                <div class="stat" id="l-ecarts" hidden title="Toits dessinés comparés aux points « bâtiment » du nuage LiDAR HD qui tombent dessus"><span>vérifiés au nuage LiDAR</span><b id="s-ecarts">—</b></div>
+                <div class="note legende" id="legende-ecarts" hidden>Points du nuage sur les toits, décalage ôté :<i class="sous"></i>toit au-dessus<i class="egal"></i>à ±0,25 m<i class="sur"></i>toit en dessous</div>
+                <div class="note" id="note">Chargement des bâtiments…</div>
+            </div>
+            <div class="section">
+                <h2>Terrain</h2>
+                <div class="stat"><span>source</span><b id="s-src">—</b></div>
+                <div class="stat"><span>altitude au centre</span><b id="s-alt">—</b></div>
+                <div class="stat"><span>amplitude sur l'emprise</span><b id="s-amp">—</b></div>
+                <div class="note" id="note-terrain">Chargement du relief…</div>
+            </div>
+            <div class="section" id="sec-veg" hidden>
+                <h2>Végétation &amp; sursol</h2>
+                <div class="stat"><span>hauteur max</span><b id="v-max">—</b></div>
+                <div class="stat"><span>masque au sud</span><b id="v-masque">—</b></div>
+                <div class="stat"><span>obstacle dominant</span><b id="v-obstacle">—</b></div>
+                <div class="note" id="v-note">Chargement…</div>
+            </div>
+        </div>
+    </div>
+
+    <div id="voile"></div>
+    <div id="scene">
+        <button type="button" id="btn-tiroir" class="bouton-vue" aria-label="Ouvrir le panneau"
+                aria-controls="panel" aria-expanded="false" title="Recherche, affichage, fiches">
+            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 7h16M4 12h16M4 17h16"/></svg>
+        </button>
+        <div id="haut-gauche">
+            <div id="hint">Glisser pour pivoter · molette pour zoomer · survol pour mesurer · clic sur un bâtiment pour sa fiche</div>
+            <div id="hud-drone" class="etat-couche" role="status" hidden></div>
+            <div id="etat-monuments" class="etat-couche" role="status" hidden><i class="roue"></i><span></span></div>
+            <div id="etat-eoliennes" class="etat-couche" role="status" hidden><i class="roue"></i><span></span></div>
+            <div id="etat-ouvrages" class="etat-couche" role="status" hidden><i class="roue"></i><span></span></div>
+            <div id="etat-nuage" class="etat-couche" role="status" hidden><i class="roue"></i><span></span></div>
+            <div id="etat-vehicules" class="etat-couche" role="status" hidden><i class="roue"></i><span></span></div>
+            <div id="etat-roofer" class="etat-couche" role="status" hidden><i class="roue"></i><span></span></div>
+            <div id="etat-partage" class="etat-couche" role="status" hidden><i class="roue"></i><span></span></div>
+            <div id="etat-moi" class="etat-couche" role="status" hidden><i class="roue"></i><span></span></div>
+            <div id="conseil-veg" class="etat-couche conseil" role="status" hidden>
+                <span></span>
+                <button type="button" class="agir">Masquer la végétation</button>
+                <button type="button" class="fermer" aria-label="Fermer le conseil">×</button>
+            </div>
+        </div>
+        <div id="attente" hidden></div>
+        <div id="boussole" title="Orientation">
+            <div class="rose" id="rose">
+                <div class="aiguille"></div>
+                <span class="n">N</span><span class="e">E</span>
+                <span class="s">S</span><span class="o">O</span>
+            </div>
+        </div>
+        <div id="nav-vue">
+            <button type="button" id="btn-plein-ecran" class="bouton-vue" hidden title="Plein écran"
+                    aria-label="Plein écran">
+                <svg viewBox="0 0 24 24" aria-hidden="true">
+                    <path class="entrer" d="M4 9V4h5M20 9V4h-5M4 15v5h5M20 15v5h-5"/>
+                    <path class="sortir" d="M9 4v5H4M15 4v5h5M9 20v-5H4M15 20v-5h5"/>
+                </svg>
+            </button>
+            <button type="button" id="t-moi" class="bouton-vue" aria-label="Ma position"
+                    title="Ma position : un repère dans la scène, suivi en continu ; à nouveau, la scène recentrée si vous en êtes sorti, sinon le suivi arrêté">
+                <svg viewBox="0 0 24 24" aria-hidden="true">
+                    <circle cx="12" cy="12" r="6.5"/><circle cx="12" cy="12" r="2"/>
+                    <path d="M12 2.5v3M12 18.5v3M2.5 12h3M18.5 12h3"/>
+                </svg>
+            </button>
+            <button type="button" id="v-nuage" class="bouton-vue texte" hidden aria-label="Nuage LiDAR"
+                    title="Nuage LiDAR : tout le bâti en points du LiDAR HD ; les ouvrages ajourés, comme la tour Eiffel, y sont toujours">LiDAR</button>
+            <button type="button" id="t-drone" class="bouton-vue" aria-label="Drone"
+                    title="Piloter un drone, vu de derrière : au clavier, flèches, Q D, espace et Maj ; au doigt, les flèches à l'écran">
+                <svg viewBox="0 0 24 24" aria-hidden="true">
+                    <circle cx="5.5" cy="5.5" r="3"/><circle cx="18.5" cy="5.5" r="3"/>
+                    <circle cx="5.5" cy="18.5" r="3"/><circle cx="18.5" cy="18.5" r="3"/>
+                    <path d="M7.6 7.6l2.4 2.4M16.4 7.6L14 10M7.6 16.4l2.4-2.4M16.4 16.4L14 14"/>
+                    <rect x="10" y="10" width="4" height="4" rx="1"/>
+                </svg>
+            </button>
+            <button type="button" id="btn-partager" class="bouton-vue" aria-label="Partager cette vue"
+                    title="Partager cette vue : un lien qui la rouvre telle quelle — caméra, jour et heure du soleil, couches allumées">
+                <svg viewBox="0 0 24 24" aria-hidden="true">
+                    <path d="M12 3.5v11M8 7.5l4-4 4 4"/>
+                    <path d="M8.5 10.5H6.5v9.5h11v-9.5h-2"/>
+                </svg>
+            </button>
+            <button type="button" id="btn-aide" class="bouton-vue" aria-label="Prise en main"
+                    aria-haspopup="dialog" aria-controls="tuto" title="Prise en main : les gestes, et ce que montre la vue">
+                <svg viewBox="0 0 24 24" aria-hidden="true">
+                    <circle cx="12" cy="12" r="9"/>
+                    <path d="M9.4 9.3a2.7 2.7 0 0 1 5.2 1c0 1.9-2.6 2.3-2.6 4"/><path d="M12 17.6v.1"/>
+                </svg>
+            </button>
+        </div>
+        <!-- Prise en main. Chaque geste a son texte au doigt et à la souris
+             (data-doigt, data-souris) ; la bascule choisit, l'appareil propose. -->
+        <dialog id="tuto" aria-labelledby="tuto-titre">
+            <form method="dialog">
+                <header>
+                    <h2 id="tuto-titre">Prise en main</h2>
+                    <button class="fermer" value="fermer" aria-label="Fermer">×</button>
+                </header>
+                <p class="tuto-intro">Le lieu en 3D, reconstruit à partir des données ouvertes de l'IGN :
+                    bâtiments et toits, arbres, relief, photo aérienne, jusqu'à l'horizon.</p>
+                <div class="tuto-mode" role="radiogroup" aria-label="Gestes">
+                    <button type="button" role="radio" data-mode="doigt">Au doigt</button>
+                    <button type="button" role="radio" data-mode="souris">À la souris</button>
+                </div>
+                <ul class="tuto-etapes">
+                    <li><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20 12a8 8 0 1 1-2.3-5.6"/><path d="M20 4v4h-4"/></svg>
+                        <div><b>Tourner autour</b><span data-doigt="Glisser un doigt sur la vue. Elle tourne seule à l'ouverture : le premier geste l'arrête."
+                            data-souris="Glisser avec le bouton gauche. La vue tourne seule à l'ouverture : le premier geste l'arrête."></span></div></li>
+                    <li><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="6.5"/><path d="M20 20l-4.4-4.4M11 8.5v5M8.5 11h5"/></svg>
+                        <div><b>Zoomer</b><span data-doigt="Pincer ou écarter deux doigts."
+                            data-souris="Molette, ou deux doigts sur le pavé tactile."></span></div></li>
+                    <li><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3v18M3 12h18M9.5 5.5L12 3l2.5 2.5M9.5 18.5L12 21l2.5-2.5M5.5 9.5L3 12l2.5 2.5M18.5 9.5L21 12l-2.5 2.5"/></svg>
+                        <div><b>Se déplacer</b><span data-doigt="Glisser à deux doigts."
+                            data-souris="Glisser avec le bouton droit, ou Maj + glisser."></span></div></li>
+                    <li><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 21V8l7-4 7 4v13M9 21v-5h6v5M9 11h.01M15 11h.01"/></svg>
+                        <div><b>Un bâtiment</b><span data-doigt="Le toucher : sa fiche s'ouvre — usage, hauteur, étages, année, matériaux."
+                            data-souris="Le survoler pour mesurer ; cliquer pour sa fiche — usage, hauteur, étages, année, matériaux."></span></div></li>
+                    <li><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 21s-7-6.2-7-11a7 7 0 0 1 14 0c0 4.8-7 11-7 11z"/><circle cx="12" cy="10" r="2.5"/></svg>
+                        <div><b>Changer de lieu</b><span>Les flèches N, E, S, O au bord de la vue décalent la scène dans leur direction.</span></div></li>
+                    <li><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3l9 5-9 5-9-5 9-5z"/><path d="M3 13l9 5 9-5"/></svg>
+                        <div><b>Choisir ce qui s'affiche</b><span>Dans le panneau (☰ en haut à gauche sur petit écran) : végétation, eau,
+                            routes, horizon, heure et saison pour les ombres ; toits, plan IGN et export dans « Avancé ».</span></div></li>
+                    <li><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="5.5" cy="5.5" r="3"/><circle cx="18.5" cy="5.5" r="3"/><circle cx="5.5" cy="18.5" r="3"/><circle cx="18.5" cy="18.5" r="3"/><path d="M7.6 7.6l2.4 2.4M16.4 7.6L14 10M7.6 16.4l2.4-2.4M16.4 16.4L14 14"/><rect x="10" y="10" width="4" height="4" rx="1"/></svg>
+                        <div><b>Survoler en drone</b><span data-doigt="Le bouton drone, à droite : les flèches à l'écran pour avancer, tourner, monter, descendre ; le même bouton pour sortir."
+                            data-souris="Le bouton drone, à droite : ↑ ↓ avancer, ← → tourner, Q D glisser, espace monter, Maj descendre ; Échap pour sortir."></span></div></li>
+                    <li><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="6.5"/><circle cx="12" cy="12" r="2"/><path d="M12 2.5v3M12 18.5v3M2.5 12h3M18.5 12h3"/></svg>
+                        <div><b>Ma position</b><span>Le bouton cible, à droite : vous dans la scène, suivi en continu ; sorti de la scène, le même bouton la recentre sur vous.</span></div></li>
+                </ul>
+                <footer>
+                    <span>Ce guide se rouvre par le bouton <b>?</b> à droite de la vue.</span>
+                    <button class="tuto-ok" value="ok">C'est parti</button>
+                </footer>
+            </form>
+        </dialog>
+        <!-- Les touches du drone, au doigt : chacune tient enfoncée la touche
+             du clavier qu'elle porte (touchesDrone). -->
+        <div id="pad-drone" hidden>
+            <div class="pad" aria-label="Avancer et tourner">
+                <button type="button" data-touche="ArrowUp" style="grid-area:1/2" aria-label="Avancer">↑</button>
+                <button type="button" data-touche="ArrowLeft" style="grid-area:2/1" aria-label="Tourner à gauche">↶</button>
+                <button type="button" data-touche="ArrowDown" style="grid-area:2/2" aria-label="Reculer">↓</button>
+                <button type="button" data-touche="ArrowRight" style="grid-area:2/3" aria-label="Tourner à droite">↷</button>
+            </div>
+            <div class="pad" aria-label="Monter, descendre et glisser">
+                <button type="button" data-touche="Space" style="grid-area:1/2" aria-label="Monter">▲</button>
+                <button type="button" data-touche="KeyA" style="grid-area:2/1" aria-label="Glisser à gauche">◀</button>
+                <button type="button" data-touche="ShiftLeft" style="grid-area:2/2" aria-label="Descendre">▼</button>
+                <button type="button" data-touche="KeyD" style="grid-area:2/3" aria-label="Glisser à droite">▶</button>
+            </div>
+        </div>
+        <div id="decalage" hidden>
+            <button type="button" class="n" data-vers="n"><span class="pointe"></span>N</button>
+            <button type="button" data-vers="e"><span class="pointe"></span>E</button>
+            <button type="button" data-vers="s"><span class="pointe"></span>S</button>
+            <button type="button" data-vers="o"><span class="pointe"></span>O</button>
+        </div>
+        <div id="tip"></div>
+        <div id="credits"></div>
+    </div>
+</div>
+
+<script>
+// La scène est demandée tout de suite, sans attendre three.js : le module qui
+// l'affiche ne s'exécute qu'une fois ses trois fichiers venus du CDN et
+// compilés, et c'est lui qui la demandait — 0,1 s après la demande de
+// three.js, mesuré dans Chrome à cache vide (outils/chrono-page.mjs), autant
+// de plus sur l'attente d'une scène à construire. Même adresse que celle du
+// module (REQUETE, plus bas), qui ne reprend cette demande que si les deux
+// concordent.
+//
+// Sans point dans l'URL, la page propose d'abord de se géolocaliser, et le
+// module attend la réponse (DEPART). Position autorisée, déjà ou à la
+// demande : elle s'écrit dans l'URL, avec moi=1 pour que le repère de « Ma
+// position » la suive. Refusée, sans réponse, indisponible ou hors de France
+// métropolitaine : l'accueil, la tour Eiffel (ACCUEIL, dans le module), dont
+// la raison est rendue pour le dire.
+(() => {
+    const lire = (params, n) => { const v = Number(String(params.get(n) || '').replace(',', '.')); return Number.isFinite(v) && params.get(n) !== null ? v : null; };
+    // POINT_DEFAUT, plus bas.
+    const ACCUEIL = { lat: 48.8583, lon: 2.2942 };
+    // scene.EMPRISE_SERVIE : au-delà, le serveur refuse le point.
+    const dansEmprise = (lat, lon) => lat >= 41.0 && lat <= 51.6 && lon >= -5.8 && lon <= 10.0;
+    // Sans réponse au bout de ce temps, l'accueil : un refus n'est pas
+    // toujours dit. La demande de Firefox se ferme d'un clic à côté sans
+    // répondre, et Chrome, après quelques refus, ne la montre plus qu'en
+    // icône dans la barre d'adresse. Une autorisation donnée ensuite emmène
+    // quand même là où l'on est.
+    const ATTENTE_POSITION_S = 10;
+
+    function demanderScene() {
+        const params = new URLSearchParams(location.search);
+        const lat = lire(params, 'lat'), lon = lire(params, 'lon');
+        const point = lat !== null && lon !== null ? { lat, lon } : ACCUEIL;
+        // Sans zone=, 1 000 m : ZONE_DEFAUT_M, plus bas.
+        const zone = lire(params, 'zone') ?? 1000;
+        const url = `api/scene?lat=${point.lat}&lon=${point.lon}`
+            + `&zone=${Math.min(Math.max(Math.round(zone / 50) * 50, 150), 2000)}`;
+        const reponse = fetch(url);
+        reponse.catch(() => {});      // l'erreur est traitée par le module
+        window.DEMANDE_SCENE = { url, reponse };
+    }
+
+    /** {} une fois la position écrite dans l'URL, sinon { raison } de l'accueil. */
+    async function positionDeDepart() {
+        // Hors https, l'API existe mais échoue sans que rien n'ait été refusé.
+        if (!navigator.geolocation || !window.isSecureContext) return { raison: 'indisponible' };
+        let etat = null;
+        try { etat = (await navigator.permissions.query({ name: 'geolocation' })).state; }
+        catch (e) { /* sans l'API des permissions, la demande dira */ }
+        if (etat === 'denied') return { raison: 'refusee' };
+        const attente = document.getElementById('attente');
+        attente.hidden = false;
+        attente.innerHTML = etat === 'granted' ? 'Localisation…'
+            : '<div>Votre position ?<br><small>Autorisez la géolocalisation pour arriver là où vous êtes ; '
+              + 'sinon, la tour Eiffel</small></div>';
+        return new Promise(fini => {
+            let tardive = false;
+            const minuterie = setTimeout(() => { tardive = true; fini({ raison: 'sans-reponse' }); },
+                                         ATTENTE_POSITION_S * 1000);
+            navigator.geolocation.getCurrentPosition(pos => {
+                const { latitude: lat, longitude: lon } = pos.coords;
+                if (!dansEmprise(lat, lon)) {
+                    if (!tardive) { clearTimeout(minuterie); fini({ raison: 'hors-emprise' }); }
+                    return;
+                }
+                // Arrondie comme la clé du cache (scene.SCENE_ARRONDI), comme
+                // les flèches de décalage. Écrite dans l'URL : un rechargement
+                // ne relance pas une construction à quelques mètres de là.
+                const u = new URL(location.href);
+                u.searchParams.set('lat', Number(lat.toFixed(4)));
+                u.searchParams.set('lon', Number(lon.toFixed(4)));
+                u.searchParams.set('moi', '1');
+                const adresse = u.pathname + u.search + u.hash;
+                if (tardive) { location.assign(adresse); return; }
+                clearTimeout(minuterie);
+                history.replaceState(null, '', adresse);
+                fini({});
+            }, err => {
+                if (tardive) return;
+                clearTimeout(minuterie);
+                fini({ raison: err.code === err.PERMISSION_DENIED ? 'refusee' : 'indisponible' });
+            // Le centre d'une scène n'a pas besoin du GPS, dont un premier
+            // point se fait attendre : le réseau suffit. Le repère, lui, suit
+            // ensuite en haute précision (watchPosition, dans le module).
+            }, { enableHighAccuracy: false, maximumAge: 60000, timeout: ATTENTE_POSITION_S * 1000 });
+        });
+    }
+
+    const params = new URLSearchParams(location.search);
+    if (lire(params, 'lat') !== null && lire(params, 'lon') !== null) {
+        demanderScene();
+        window.DEPART = Promise.resolve({});
+    } else {
+        window.DEPART = positionDeDepart().then(depart => { demanderScene(); return depart; });
+    }
+})();
+</script>
+<script type="importmap">
+{
+  "imports": {
+    "three": "https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js",
+    "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/"
+  }
+}
+</script>
+<script type="module" src="static/js/scene/main.js"></script>
+</body>
+</html>

@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>CENZUB – Jeoffrécourt en 3D</title>
+<style>body{font-family:system-ui,sans-serif;background:#111;color:#eee;display:grid;place-items:center;height:100vh;margin:0}</style>
+</head>
+<body>
+<div id="msg">Préparation de la scène…</div>
+<script>
+// Installe le service worker qui rejoue la scène enregistrée, puis ouvre la page.
+(async () => {
+  const msg = document.getElementById('msg');
+  // Sans service worker (navigateur intégré à une messagerie, page hors
+  // https), la page lit la scène par sans-sw.js : en ligne, elle s'ouvre
+  // quand même ; hors réseau, il faut https ou localhost (LISEZMOI.txt).
+  if ('serviceWorker' in navigator && window.isSecureContext) {
+    // Un navigateur qui l'enregistre sans jamais le mettre aux commandes
+    // laissait cette page sur « Préparation… » : 5 s au plus.
+    const installer = (async () => {
+      await navigator.serviceWorker.register('sw.js');
+      await navigator.serviceWorker.ready;
+      // Le sien, pas celui d'un site parent : Canjuers est publié sous
+      // canjuers/ dans le site de CENZUB, dont le service worker couvre
+      // aussi ce dossier et ne connaît pas ses réponses.
+      const mien = new URL('sw.js', location.href).href;
+      if (!navigator.serviceWorker.controller || navigator.serviceWorker.controller.scriptURL !== mien) {
+        await new Promise(r => navigator.serviceWorker.addEventListener('controllerchange', r, { once: true }));
+      }
+    })();
+    try { await Promise.race([installer, new Promise(r => setTimeout(r, 5000))]); }
+    catch (e) { /* la page se passera du service worker */ }
+  }
+  // ?vers= (ancien choix entre la scène et l'éditeur) : retiré, la scène seule.
+  const ici = new URLSearchParams(location.search);
+  const vers = 'app.html';
+  ici.delete('vers');
+  const q = ici.toString();
+  location.replace(vers + (q ? '?' + q : '?lat=43.68303&lon=6.43797&zone=150&horizon=16&vaste=1&couches=-vegetation,-eau,-routes,-lignes,-ouvrages,-constructions,-eoliennes&vue=43.68303,6.43797,0,15000,180,40'));
+})().catch(e => { document.getElementById('msg').textContent = 'Erreur : ' + e.message; });
+</script>
+</body>
+</html>

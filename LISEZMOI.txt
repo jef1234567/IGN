@@ -1,0 +1,14 @@
+CENZUB – Jeoffrécourt en 3D (version hors réseau)
+
+1. Copier le dossier entier sur le PC.
+2. Clic droit sur servir.ps1 > « Exécuter avec PowerShell ».
+   Le navigateur s'ouvre sur http://localhost:8080/
+   (si PowerShell refuse le script : powershell -ExecutionPolicy Bypass -File servir.ps1)
+3. Ne pas ouvrir index.html par double-clic : le navigateur bloque alors la scène.
+
+Données © IGN (Licence Ouverte Etalab 2.0) ; monuments © contributeurs OpenStreetMap (ODbL).
+Outil : Vue 3D IGN, Yannick Simon, licence MIT – https://github.com/ysimonx/vue-3d-ign
+
+Camp entier : le dossier tuiles/ porte l'orthophoto et le relief de l'IGN
+sur tout le camp (zone.json). Activer le drone et quitter la scène :
+l'horizon reste net au-dessus du camp, sans réseau.
