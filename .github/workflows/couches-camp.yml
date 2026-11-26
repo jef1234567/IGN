@@ -33,7 +33,7 @@ jobs:
           CAMP: ${{ inputs.camp || 'canjuers' }}
         run: |
           mkdir -p sortie
-          python outils/couches_camp.py inventaire "zones/$CAMP.geojson" | tee sortie/inventaire.txt
+          timeout 900 python outils/couches_camp.py inventaire "zones/$CAMP.geojson" | tee sortie/inventaire.txt || true
           python outils/couches_camp.py lire "zones/$CAMP.geojson" sortie | tee sortie/lecture.txt || true
           ls -l sortie
       - name: Branche couches-<camp>

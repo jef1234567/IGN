@@ -50,6 +50,7 @@ BDTOPO = {
     "detail_hydrographique": ("nature", "nature_detaillee", "toponyme", "etat_de_l_objet"),
     "reservoir": ("nature", "toponyme", "hauteur", "etat_de_l_objet"),
     "plan_d_eau": ("nature", "toponyme", "persistance", "etat_de_l_objet"),
+    "parc_ou_reserve": ("nature", "nature_detaillee", "toponyme", "etat_de_l_objet"),
     "troncon_de_route": ("nature", "importance", "largeur_de_chaussee", "nombre_de_voies",
                          "acces_vehicule_leger", "position_par_rapport_au_sol", "restriction_de_poids_total",
                          "restriction_de_largeur", "nom_collaboratif_gauche", "etat_de_l_objet",
@@ -88,7 +89,11 @@ def wfs(typename, autour):
         debut += PAGE
 
 
-RE_PROTEGE = re.compile(r"PROTECTEDAREAS|natura|znieff|zps|zsc|sic\b|parc|réserve|reserve|biotope|apb|rnn|rnr|ramsar|conservatoire", re.I)
+# Les couches d'espaces protégés de l'INPN, dans les noms du WFS : « parc »
+# seul prendrait les parcelles du cadastre (plus de 20 min de lecture le
+# 26 novembre 2026).
+RE_PROTEGE = re.compile(r"PROTECTEDAREAS|PROTECTEDSITES|natura|znieff|\bzps\b|\bzsc\b|\bsic\b|parc_?nat|parcs?\s+nat|"
+                        r"r[ée]serves?_?nat|biotope|\bapb\b|\brnn\b|\brnr\b|ramsar", re.I)
 
 
 def couches_protegees():
@@ -106,7 +111,10 @@ def couches_protegees():
 
 def inventaire(zone):
     autour = elargir(zone, MARGE_M)
-    for nom, titre in couches_protegees():
+    protegees = couches_protegees()
+    print("Couches d'espaces protégés :", *(f"  {n} ({t})" for n, t in protegees), sep="\n")
+    sys.stdout.flush()
+    for nom, titre in protegees:
         try:
             objets = wfs(nom, autour)
         except requests.RequestException as e:
