@@ -13,6 +13,19 @@ messages de commit et dans les commentaires des modules.
 
 ## Scène v16 — 21 novembre 2026
 
+### Ajouté
+
+- **Préparation de mission : plusieurs postes, étages, débattement** (26
+  novembre 2026). Jusqu'à quatre postes, nommés et colorés, que la carte
+  réunit (case « tous les postes ») ou montre un à un ; « Déplacer » change
+  de place le poste choisi. Un poste se pose aussi sur la façade d'un
+  bâtiment, à l'étage choisi (3 m par étage, l'œil à 0,6 m du mur), ou sur
+  son toit ; la vue du poste regarde alors par la fenêtre. Chaque type porte
+  le débattement en site de son arme (Leclerc −142 à +356 ‰ ; les autres à
+  vérifier) : la carte montre en orange ce qui est vu mais hors de ce
+  débattement, et la ligne de vue dit « je peux le traiter » ou non. Décocher
+  « Ligne de vue » efface la ligne tracée.
+
 ### Modifié
 
 - **Préparation de mission : les bâtiments en vert et rouge** (26 novembre

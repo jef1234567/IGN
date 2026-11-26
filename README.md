@@ -21,8 +21,9 @@ Une heure plus tôt que le début est celle du lendemain (exercice de nuit). Une
 
 Section « Préparation de mission » du panneau de la vue 3D, pour le chef qui prépare son action : je mets mon véhicule ici, qui le voit, que voit-il.
 
-- **Poser le poste**, puis un clic sur le terrain. Les hauteurs viennent du type choisi (fantassin couché, à genou, debout, poste MMP, VBCI, Griffon, Jaguar, Leclerc) : **optique** (œil, épiscope, viseur) et **exposé** (le plus haut qui dépasse). Ce sont des ordres de grandeur, à corriger dans les champs. Même chose pour l'ennemi, ligne « en face ».
-- **Ligne de vue**, puis un clic : distance, azimut, dénivelé, et pour chaque sens « je le vois » ou « masqué par le relief, un bâtiment, la végétation à N m », avec le profil du sol. Chaque clic suivant vise un autre point.
+- **Nouveau poste**, puis un clic sur le terrain, ou sur la façade ou le toit d'un bâtiment (l'étage se choisit ensuite) ; quatre postes au plus, « Déplacer » change de place celui qui est choisi. Le débattement en site de l'arme (en millièmes) dit ce qu'elle peut traiter : orange sur la carte, vu mais hors débattement.
+- Les hauteurs du poste choisi viennent du type choisi (fantassin couché, à genou, debout, poste MMP, VBCI, Griffon, Jaguar, Leclerc) : **optique** (œil, épiscope, viseur) et **exposé** (le plus haut qui dépasse). Ce sont des ordres de grandeur, à corriger dans les champs. Même chose pour l'ennemi, ligne « en face ».
+- **Ligne de vue** (la décocher l'efface), puis un clic : distance, azimut, dénivelé, et pour chaque sens « je le vois » ou « masqué par le relief, un bâtiment, la végétation à N m », avec le profil du sol. Chaque clic suivant vise un autre point.
 - **Ce que je vois** : le terrain où un ennemi de la hauteur choisie est vu (vert) ou masqué (rouge), jusqu'à la portée saisie. **Qui me voit** : le terrain d'où un ennemi voit mon poste (rouge).
 - **Vue du poste** : la caméra à l'optique ; glisser pour tourner, molette pour grossir (jumelles), Échap pour sortir. Un clic y vise un point.
 - **Mesurer** : deux clics, distance, azimut vrai et au carroyage en millièmes (6 400), dénivelé et pente, coordonnées MGRS et altitude des deux points.
