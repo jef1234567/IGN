@@ -961,7 +961,7 @@ export const etatMission = () => ({
 
 // Pour le bréchage (interface/brechage.js), qui vient après et calcule sur
 // les mêmes objets, avec les mêmes marqueurs et traits.
-export { TYPES, altitudePoint, pointAuSol, solsVises, sols, obstacles, reliefPret, recaler, HORS_RELIEF, quandModeMission, couperModeMission, empechement, marqueur, placer, tracer, effacerTrait, drape, altitude, fmt };
+export { TYPES, mesure, altitudePoint, pointAuSol, solsVises, sols, obstacles, reliefPret, recaler, HORS_RELIEF, quandModeMission, couperModeMission, empechement, marqueur, placer, tracer, effacerTrait, drape, altitude, fmt };
 
 // --- Pour l'audit des calculs (outils/audit-vues.mjs) ---------------------------------
 // Les mêmes fonctions que la page, sur des paires données en (lon, lat, hauteur
