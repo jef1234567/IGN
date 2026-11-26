@@ -25,6 +25,7 @@ sont celles que lit `altitudesTuile` pour chacune : niveau z − 5 borné à
   python outils/paquet_horizon.py compter zone.geojson [--zoom-max 18]
   python outils/paquet_horizon.py lire zone.geojson site [--zoom-max 18]
   python outils/paquet_horizon.py reperes zone.geojson reperes.geojson
+  python outils/paquet_horizon.py batiments zone.geojson batiments.json
 
 `zone` cherche dans OpenStreetMap (Overpass) le plus grand terrain militaire
 dont le nom contient le texte donné, et écrit son contour en GeoJSON, avec
@@ -199,6 +200,52 @@ def reperes_bdtopo(zone, lire=wfs):
     fc = reperes_depuis(elements, autour)
     fc["source"] = "BD TOPO (IGN), Licence Ouverte 2.0"
     return fc
+
+
+# Les bâtiments d'un camp et de ses abords, en volume sur la vue d'ensemble et
+# comme obstacles des calculs de vue : la BD TOPO, emprise et hauteur. Repli
+# de la hauteur comme la page (commun/regles.js) : 3 m par étage, un étage
+# sinon.
+HAUTEUR_PAR_ETAGE = 3
+# 0,3 m : sous le pixel du zoom 18 (0,45 m), l'emprise ne change pas à l'œil.
+SIMPLIFIER_BATI_DEG = 0.000003
+
+
+def hauteur_batiment(p):
+    """Hauteur BD TOPO, sinon 3 m par étage, sinon un étage."""
+    h = p.get("hauteur")
+    if isinstance(h, (int, float)) and h > 0:
+        return round(float(h), 1)
+    etages = p.get("nombre_d_etages")
+    if isinstance(etages, (int, float)) and etages > 0:
+        return float(HAUTEUR_PAR_ETAGE * etages)
+    return float(HAUTEUR_PAR_ETAGE)
+
+
+def batiments_bdtopo(zone, lire=wfs):
+    """Bâtiments BD TOPO à MARGE_REPERES_M autour de la zone : [[h, lon, lat, lon, lat…]…].
+
+    Un anneau extérieur par polygone, fermeture omise, en millionièmes de
+    degré (0,1 m) : le format le plus court que la page lit sans bibliothèque.
+    """
+    autour = elargir(zone, MARGE_REPERES_M)
+    dedans = prep(autour)
+    sortie = []
+    for f in lire("batiment", autour):
+        g = shape(f["geometry"])
+        if g.is_empty or not dedans.intersects(g):
+            continue
+        h = hauteur_batiment(f["properties"])
+        for poly in (g.geoms if g.geom_type == "MultiPolygon" else [g]):
+            anneau = poly.exterior.simplify(SIMPLIFIER_BATI_DEG)
+            coords = list(anneau.coords)[:-1]
+            if len(coords) < 3:
+                continue
+            plat = [h]
+            for x, y, *_ in coords:
+                plat += [round(x, 6), round(y, 6)]
+            sortie.append(plat)
+    return sortie
 
 
 def reperes_depuis(elements, autour):
@@ -417,6 +464,12 @@ def main(argv):
         for ft in fc["features"]:
             genres[ft["properties"]["type"]] = genres.get(ft["properties"]["type"], 0) + 1
         print(", ".join(f"{g} : {n}" for g, n in sorted(genres.items())))
+        return 0
+    if len(args) == 3 and args[0] == "batiments":
+        bati = batiments_bdtopo(lire_zone(args[1]))
+        with open(args[2], "w", encoding="utf-8") as f:
+            json.dump({"source": "BD TOPO (IGN), Licence Ouverte 2.0", "batiments": bati}, f, separators=(",", ":"))
+        print(f"{len(bati)} bâtiments, {os.path.getsize(args[2]) / 1e6:.1f} Mo")
         return 0
     if len(args) == 2 and args[0] == "compter":
         ortho, alti = inventaire(lire_zone(args[1]), zoom_max)

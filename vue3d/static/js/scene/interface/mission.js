@@ -22,6 +22,7 @@ import { terrain, anneauRelief, altitudeRef, exagVert, relief } from '../terrain
 import { tuilesMontrees } from '../terrain/horizon.js';
 import { reliefDeCalcul, reliefCouvre, maillageCalcul, ySolCalcul, chute } from './reliefcalcul.js';
 import { groupeBatiments } from '../batiments/etat.js';
+import { groupeBatiCamp } from './batiments-camp.js';
 import { groupeVegetation } from '../vegetation/etat.js';
 import { groupeVegSimple } from '../vegetation/couche.js';
 import { prendreLeClic, prendreLaMolette } from './gestes.js';
@@ -94,7 +95,11 @@ const sols = () => [terrain && terrain.mesh, anneauRelief && anneauRelief.mesh, 
 const solsVises = () => sols().concat(tuilesMontrees());
 function batis() {
     const liste = [];
-    groupeBatiments.traverse(o => { if (o.isMesh && visible(o)) liste.push(o); });
+    // Les bâtiments de la scène, et ceux de tout le camp sur la vue
+    // d'ensemble (interface/batiments-camp.js).
+    for (const g of [groupeBatiments, groupeBatiCamp]) {
+        g.traverse(o => { if (o.isMesh && visible(o)) liste.push(o); });
+    }
     return liste;
 }
 /** Ce qui peut masquer : le sol, et les bâtiments et la végétation affichés. */
@@ -145,8 +150,12 @@ function pointSous(souris, avecBati) {
     const h = new THREE.Vector2(n.x, n.z).normalize().multiplyScalar(ECART_FACADE);
     const p = pointAuSol(t.point.x + h.x, t.point.z + h.y);
     if (!p) return null;
-    t.object.geometry.computeBoundingBox();
-    const haut = new THREE.Vector3(0, t.object.geometry.boundingBox.max.y, 0).applyMatrix4(t.object.matrixWorld).y;
+    let haut;
+    if (t.object.userData.hautDe && t.face) haut = t.object.userData.hautDe(t.face.a);   // bâtiments du camp
+    else {
+        t.object.geometry.computeBoundingBox();
+        haut = new THREE.Vector3(0, t.object.geometry.boundingBox.max.y, 0).applyMatrix4(t.object.matrixWorld).y;
+    }
     const etages = Math.max(1, Math.floor((haut - p.y) / HAUTEUR_ETAGE));
     const etage = Math.min(Math.max(0, Math.floor((t.point.y - p.y) / HAUTEUR_ETAGE)), etages - 1);
     // Le cap de la façade, vers l'extérieur : la vue depuis la fenêtre part de là.

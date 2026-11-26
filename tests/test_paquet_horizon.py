@@ -204,3 +204,18 @@ def test_reperes_bdtopo_au_format_osm():
     assert {"type": "sommet", "nom": "Fayet"} in props
     assert all(p.get("nom") != "Vieux" for p in props)                      # ruines laissées
     assert [p["ref"] for p in props if p["type"] == "route"] == ["D955"]     # pas l'autoroute
+
+
+def test_batiments_bdtopo():
+    carre = [[6.1, 43.1], [6.1001, 43.1], [6.1001, 43.1001], [6.1, 43.1001], [6.1, 43.1]]
+    couches = {"batiment": [
+        {"properties": {"hauteur": 7.25}, "geometry": {"type": "Polygon", "coordinates": [carre]}},
+        {"properties": {"hauteur": None, "nombre_d_etages": 2},
+         "geometry": {"type": "MultiPolygon", "coordinates": [[carre]]}},
+        {"properties": {}, "geometry": {"type": "Polygon", "coordinates": [carre]}},
+        {"properties": {"hauteur": 9}, "geometry": {"type": "Polygon", "coordinates": [
+            [[7.0, 43.1], [7.001, 43.1], [7.001, 43.101], [7.0, 43.1]]]}},          # trop loin
+    ]}
+    bati = ph.batiments_bdtopo(box(6.05, 43.05, 6.15, 43.15), lire=lambda couche, autour: couches[couche])
+    assert [b[0] for b in bati] == [7.2, 6.0, 3.0]
+    assert bati[0][1:] == [6.1, 43.1, 6.1001, 43.1, 6.1001, 43.1001, 6.1, 43.1001]

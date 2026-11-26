@@ -120,6 +120,18 @@ jobs:
           else timeout 900 python outils/paquet_horizon.py reperes zone.geojson site/reperes.geojson \
             || echo "::warning::Repères OSM non lus : le camp est publié sans eux."; fi
           ls -l site/camp.geojson site/reperes.geojson || true
+      # Ses bâtiments BD TOPO (interface/batiments-camp.js) : gardés dans le
+      # dépôt (zones/<camp>-batiments.json), sinon lus à la Géoplateforme.
+      - name: Bâtiments du camp
+        if: ${{ !inputs.emprise }}
+        env:
+          CAMP: ${{ inputs.camp || 'Canjuers' }}
+        run: |
+          GARDE="zones/$(echo "$CAMP" | tr '[:upper:]' '[:lower:]')-batiments.json"
+          if [ -f "$GARDE" ]; then cp "$GARDE" site/batiments.json
+          else timeout 1200 python outils/paquet_horizon.py batiments zone.geojson site/batiments.json \
+            || echo "::warning::Bâtiments BD TOPO non lus : le camp est publié sans eux."; fi
+          ls -l site/batiments.json || true
       - name: Journal du serveur
         if: always()
         run: grep -v "api/tuile" serveur.log | grep -iE "WARNING|ERROR|Traceback|Error" | tail -n 60 || true
