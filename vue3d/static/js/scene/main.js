@@ -51,6 +51,7 @@ import './interface/interactions.js';
 import { demarrerOrbite } from './interface/boutons.js';
 import './interface/decalage.js';
 import './interface/vaste.js';
+import './interface/reperes.js';
 import './interface/drone.js';
 import './interface/tuto.js';
 import './interface/gestes.js';
