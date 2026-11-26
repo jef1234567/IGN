@@ -18,7 +18,7 @@ import { scene, camera, renderer } from '../socle/rendu.js';
 import { prendreLeClic } from './gestes.js';
 import { versMgrs } from '../../commun/mgrs.js';
 import {
-    TYPES, pointAuSol, obstacles, empechement, marqueur, placer, tracer, effacerTrait, drape, altitude, fmt,
+    TYPES, altitudePoint, pointAuSol, solsVises, obstacles, reliefPret, recaler, HORS_RELIEF, quandModeMission, couperModeMission, empechement, marqueur, placer, tracer, effacerTrait, drape, altitude, fmt,
 } from './mission.js';
 
 const $ = id => document.getElementById(id);
@@ -48,23 +48,28 @@ const marques = [];           // marqueurs des positions trouvées
 
 function choisirMode(m) {
     mode = mode === m ? null : m;
+    // Un seul mode de clic à la fois : celui de la mission, pris avant le
+    // nôtre, gardait sinon tous les clics.
+    if (mode) couperModeMission();
+    btnTracer.textContent = mode === 'tracer' ? 'Terminer le tracé' : 'Tracer l’obstacle';
     btnTracer.classList.toggle('on', mode === 'tracer');
     btnCote.classList.toggle('on', mode === 'cote');
     renderer.domElement.style.cursor = mode ? 'crosshair' : '';
-    if (mode === 'tracer') note.textContent = 'Clique les points de l’obstacle, puis « Tracer » à nouveau pour finir.';
+    if (mode === 'tracer') note.textContent = 'Clique les points de l’obstacle sur le terrain ; double-clic sur le dernier, ou « Terminer le tracé », pour finir.';
     else if (mode === 'cote') note.textContent = 'Clique du côté d’où vient l’attaquant.';
 }
+function finirTrace() {
+    choisirMode(null);
+    if (sommets.length >= 2) choisirMode('cote');
+    else { effacer(); note.textContent = 'Il faut au moins deux points : recommence le tracé.'; }
+    majBoutons();
+}
 btnTracer.addEventListener('click', () => {
-    if (mode === 'tracer') {
-        choisirMode(null);
-        if (sommets.length >= 2) choisirMode('cote');
-        else note.textContent = 'Il faut au moins deux points.';
-        majBoutons();
-        return;
-    }
+    if (mode === 'tracer') { finirTrace(); return; }
     effacer();
     choisirMode('tracer');
 });
+quandModeMission(() => { if (mode) choisirMode(mode); });
 btnCote.addEventListener('click', () => choisirMode('cote'));
 btnEffacer.addEventListener('click', () => { effacer(); choisirMode(null); note.textContent = NOTE_DEPART; });
 for (const c of [caseBarbeles, caseMines, caseMerlon]) c.addEventListener('change', dessinerObstacle);
@@ -136,10 +141,24 @@ prendreLeClic((e, souris) => {
     const gene = empechement();
     if (gene) { note.textContent = gene; return true; }
     const p = solSous(souris);
-    if (!p) return true;
+    if (!p) { note.textContent = HORS_RELIEF; return true; }
     if (mode === 'tracer') {
+        // Un double-clic (deux clics en 400 ms au même endroit) finit le tracé.
+        // Un second clic sur le dernier point n'en pose pas un autre (un
+        // segment nul n'aurait pas de côté) ; en moins de 400 ms, c'est un
+        // double-clic, qui finit le tracé.
+        const avant = sommets[sommets.length - 1], t = performance.now();
+        if (avant && Math.hypot(p.x - avant.x, p.z - avant.z) < 15) {
+            if (t - dernierClic < 400) { dernierClic = 0; finirTrace(); }
+            else dernierClic = t;
+            return true;
+        }
+        dernierClic = t;
         sommets.push(p);
         dessinerObstacle();
+        const n = sommets.length;
+        note.textContent = n < 2 ? 'Premier point posé : clique le suivant.'
+            : `${n} points, ${fmt(longueur())} m : clique le suivant, ou double-clic / « Terminer le tracé ».`;
     } else if (mode === 'cote') {
         cote = auPlusPres(p.x, p.z).s;
         choisirMode(null);
@@ -151,9 +170,10 @@ prendreLeClic((e, souris) => {
     return true;
 });
 const rayon = new THREE.Raycaster();
+let dernierClic = 0;
 function solSous(souris) {
     rayon.setFromCamera(souris, camera);
-    const t = rayon.intersectObjects(obstacles(), false)[0];
+    const t = rayon.intersectObjects(solsVises().concat(obstacles()), false)[0];
     return t ? pointAuSol(t.point.x, t.point.z) : null;
 }
 
@@ -166,6 +186,11 @@ function dessinerCote() {
     // Le côté ami est celui du signe `cote` du produit vectoriel : (−uz, ux) y mène.
     const bout = { x: m.x + nx * cote * 60, z: m.z + nz * cote * 60 };
     tracer('br-cote', drape(m, bout, 24, 1.5), COULEUR_ATT);
+}
+function longueur() {
+    let total = 0;
+    for (let i = 0; i + 1 < sommets.length; i++) total += Math.hypot(sommets[i + 1].x - sommets[i].x, sommets[i + 1].z - sommets[i].z);
+    return total;
 }
 function milieu() {
     let total = 0;
@@ -330,6 +355,8 @@ async function chercher() {
     if (gene) { note.textContent = gene; return; }
     const def = TYPES[Number(selDef.value)], att = TYPES[Number(selAtt.value)];
     const portee = Math.min(Math.max(Number(champPortee.value) || 1500, 200), 3000);
+    // Le relief au-delà de l'anneau, au niveau fixe : lu d'abord, puis l'obstacle recalé dessus.
+    if (!reliefPret(sommets, portee + Math.max(...ABORDS), () => { for (const p of sommets) recaler(p); chercher(); }, note)) return;
     note.textContent = 'Calcul en cours…';
     btnChercher.disabled = true;
     await new Promise(r => requestAnimationFrame(() => setTimeout(r, 0)));
@@ -412,7 +439,7 @@ function afficher(defenseurs, appuis, def, att) {
     oterResultats();
     dessinerCote();
     const pct = v => `${fmt(100 * v)} %`;
-    const ligne = (nom, p, detail) => `<div class="stat"><span>${nom}</span><b>${versMgrs(p.lon, p.lat) || '—'} · ${fmt(altitude(p.y))} m</b></div>`
+    const ligne = (nom, p, detail) => `<div class="stat"><span>${nom}</span><b>${versMgrs(p.lon, p.lat) || '—'} · ${fmt(altitudePoint(p))} m</b></div>`
         + `<div class="br-detail">${detail}</div>`;
     let html = `<h3 class="br-titre def">Défenseur (${def.nom})</h3>`;
     if (!defenseurs.length) html += '<div class="br-detail">Aucune position ne voit 20 % de l’obstacle.</div>';
@@ -459,3 +486,24 @@ majBoutons();
 
 /** L'état du module, pour les essais. */
 export const etatBrechage = () => ({ sommets, cote, mode, derniere });
+
+/**
+ * Pour l'audit des calculs (outils/audit-vues.mjs) : la ligne de vue de chaque
+ * paire [A, B] ({ lon, lat, h }) suivie dans la grille de hauteurs.
+ */
+export async function grilleEssai(paires) {
+    const { toLocal } = await import('../socle/projection.js');
+    const pt = q => { const [x, y] = toLocal(q.lon, q.lat); return pointAuSol(x, -y); };
+    const pts = paires.flat().map(pt);
+    await new Promise((ok, ko) => { if (reliefPret(pts, 50, ok, note)) ok(); setTimeout(() => ko(new Error('relief')), 60000); });
+    const b = { x0: Infinity, x1: -Infinity, z0: Infinity, z1: -Infinity };
+    for (const p of paires.flat().map(pt)) {
+        b.x0 = Math.min(b.x0, p.x - 50); b.x1 = Math.max(b.x1, p.x + 50);
+        b.z0 = Math.min(b.z0, p.z - 50); b.z1 = Math.max(b.z1, p.z + 50);
+    }
+    const g = grilleHauteurs(b);
+    return paires.map(([A, B]) => {
+        const a = pt(A), c = pt(B);
+        return passe(g, { x: a.x, z: a.z, y: a.y + A.h }, { x: c.x, z: c.z, y: c.y + B.h });
+    });
+}
