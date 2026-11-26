@@ -23,6 +23,20 @@ messages de commit et dans les commentaires des modules.
   Végétation & sursol ne s'affichent plus ; elles restent dans la page, cachées,
   pour les modules qui y écrivent et pour `outils/essai-navigateur.mjs`.
 
+### Ajouté
+
+- **Tir indirect d'instruction, lot 1 : la dispersion** (26 novembre 2026).
+  Une section « Tir indirect (instruction) » pose une pièce (mortier 81,
+  mortier 120 ou CAESAR) et un objectif sur le terrain, puis tire une salve
+  de 10 à 500 coups au hasard autour de l'objectif. Au sol : chaque coup en
+  orange, l'ellipse jaune qui contient la moitié des coups, le rectangle blanc
+  de ±4 écarts probables qui les contient presque tous, et la bande centrale
+  de ±1 EP en portée ; la page compte les coups de chaque zone. Portées des
+  pages Wikipédia, écarts probables d'école (exemple du FM 6-40 pour le
+  155 mm), réglables : ce n'est pas un calcul de tir. Vérifié sous Node par
+  `outils/verifier-tir.mjs` (50 % dans ±1 EP et dans l'ellipse, 99,3 % dans
+  ±4 EP, sur 200 000 coups).
+
 ### Modifié
 
 - **Débattement en site saisi en degrés** (26 novembre 2026). Les champs du

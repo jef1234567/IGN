@@ -69,6 +69,8 @@ btnTracer.addEventListener('click', () => {
     choisirMode('tracer');
 });
 quandModeMission(() => { if (mode) choisirMode(mode); });
+/** Coupe le tracé de l'obstacle, s'il est en cours (le tir indirect s'y coupe). */
+export function couperModeBrechage() { if (mode) choisirMode(mode); }
 btnEffacer.addEventListener('click', () => { effacer(); choisirMode(null); note.textContent = NOTE_DEPART; });
 for (const c of [caseBarbeles, caseMines, caseMerlon]) c.addEventListener('change', () => { dessinerObstacle(); oterResultats(); });
 const NOTE_DEPART = note.textContent;

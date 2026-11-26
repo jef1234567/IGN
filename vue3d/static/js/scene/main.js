@@ -62,6 +62,7 @@ import './interface/soleil.js';
 import './interface/reliefcalcul.js';
 import './interface/mission.js';
 import './interface/brechage.js';
+import './interface/tir.js';
 import './interface/partage.js';
 import './interface/boucle.js';
 

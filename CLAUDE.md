@@ -21,6 +21,7 @@ VUE3D_ROOFER=docker VUE3D_CACHE=./cache flask --app vue3d.app run --port 8080   
 node outils/verifier-geometrie.mjs               # géométrie de la page, exécutée sous Node
 node outils/verifier-modules.mjs                 # ordre d'évaluation des modules des pages
 node outils/verifier-mgrs.mjs                    # coordonnées MGRS et millièmes de la préparation de mission
+node outils/verifier-tir.mjs                     # lois de dispersion du tir indirect d'instruction (js/commun/tir.js)
 node outils/verifier-export.mjs essai.ifc essai.gml   # exports IFC et CityGML, exécutés sous Node
 python outils/mesure_eoliennes.py osm donnees/eoliennes-france.json   # éoliennes : tags OSM (osm), BD TOPO (bdtopo), mâts au LiDAR (lidar), blocs (blocs ~/Services/vue-3d-ign/cache)
 node outils/mesure-ecarts-toits.mjs "http://localhost:8080/?lat=43.9116&lon=5.2003"   # toits contre le nuage LiDAR (puppeteer-core)

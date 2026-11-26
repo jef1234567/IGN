@@ -185,6 +185,34 @@
             <div class="note" id="br-note">Trace l'obstacle, puis calcule : la carte montre d'où l'on en voit la plus grande part, et numérote les dix meilleurs endroits.</div>
         </div>
 
+        <div class="section" id="sec-tir">
+            <h2>Tir indirect (instruction)</h2>
+            <div class="row">
+                <label for="tir-arme">arme</label>
+                <select id="tir-arme"></select>
+            </div>
+            <div class="toggles">
+                <button class="toggle" id="tir-piece" title="Cliquer sur le terrain : la pièce (le mortier ou le canon) y est posée">Pièce</button>
+                <button class="toggle" id="tir-objectif" title="Cliquer sur le terrain : le point visé">Objectif</button>
+            </div>
+            <div class="row">
+                <label for="tir-ep-p" title="Écart probable en portée : la moitié des coups tombe à moins de cette distance, en plus ou en moins, du point moyen">EP portée</label>
+                <input type="number" id="tir-ep-p" min="1" max="2000" step="1" /> <span class="mi-u">m</span>
+                <label for="tir-ep-d" title="Écart probable en direction : la moitié des coups tombe à moins de cette distance à gauche ou à droite">direction</label>
+                <input type="number" id="tir-ep-d" min="1" max="2000" step="1" /> <span class="mi-u">m</span>
+            </div>
+            <div class="row">
+                <label for="tir-nombre">coups</label>
+                <select id="tir-nombre"><option>10</option><option selected>30</option><option>100</option><option>500</option></select>
+            </div>
+            <div class="toggles">
+                <button class="toggle" id="tir-tirer" disabled title="Tire la salve : chaque point orange est un coup">Tirer</button>
+                <button class="toggle" id="tir-effacer" disabled>Effacer</button>
+            </div>
+            <div id="tir-resultat"></div>
+            <div class="note" id="tir-note">Pose la pièce, puis l'objectif, puis tire. Valeurs d'école pour l'instruction : ni tables de tir, ni éléments de tir.</div>
+        </div>
+
         <div class="section" id="sec-moi" hidden>
             <h2>Ma position</h2>
             <div class="stat"><span>précision</span><b id="m-prec">—</b></div>
