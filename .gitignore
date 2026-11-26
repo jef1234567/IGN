@@ -18,3 +18,5 @@ package-lock.json
 /docs/demo/*.mp4
 # Métadonnées du Finder de macOS, dans chaque dossier ouvert.
 .DS_Store
+outils/audit_vues/scene.json
+outils/audit_vues/page.json

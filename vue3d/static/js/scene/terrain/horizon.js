@@ -104,6 +104,33 @@ export function altitudeHorizon(lon, lat, x, z) {
 }
 
 /**
+ * Altitudes du RGE ALTI sur l'emprise (o, s, e, n), en degrés, à un niveau fixe
+ * de la pyramide : celui que lit la tuile d'horizon la plus fine
+ * (HORIZON_ZOOM_MAX − 5), le seul qu'un camp publié hors réseau garde partout
+ * (outils/paquet_horizon.py). Les calculs de vue (interface/reliefcalcul.js)
+ * en ont besoin : l'horizon affiché change de finesse avec la caméra, une
+ * ligne de vue ne doit pas en dépendre. Rend un échantillonneur (lon, lat) →
+ * altitude en m, NaN hors du territoire, et son pas en degrés.
+ */
+export async function altitudesEmprise(o, s, e, n) {
+    const niveau = Math.min(Math.max(HORIZON_ZOOM_MAX - 5, ALTI_NIVEAU_MIN), ALTI_NIVEAU_MAX);
+    const p = 180 / 2 ** niveau / 256;
+    const rge = await echantillonneurPyramide(
+        Math.floor((o + 180) / p - 0.5), Math.floor((e + 180) / p - 0.5) + 1,
+        Math.floor((90 - n) / p - 0.5), Math.floor((90 - s) / p - 0.5) + 1,
+        (ligne, colonne) => tuileAltitude(niveau, ligne, colonne),
+        (lon, lat) => [(lon + 180) / p, (90 - lat) / p]);
+    rge.pas = p;
+    return rge;
+}
+
+/** Les tuiles d'horizon montrées : le sol qu'un clic peut viser au-delà de l'anneau. */
+export function tuilesMontrees() {
+    if (!horizonMontre) return [];
+    return groupeHorizon.children.filter(m => m.visible);
+}
+
+/**
  * Y du sol en (lon, lat), en unités de scène : le terrain fin dans l'emprise,
  * sinon l'anneau, sinon l'horizon ; null si rien n'y est chargé. C'est ce qui
  * pose un fumigène du scénario à 10 km de la scène, sur un camp survolé hors
