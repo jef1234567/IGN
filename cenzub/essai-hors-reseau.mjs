@@ -50,11 +50,13 @@ const z = zone.zooms[1], n = 2 ** z;
 const x = Math.floor((o + 180) / 360 * n);
 const y = Math.floor((1 - Math.asinh(Math.tan(s * Math.PI / 180)) / Math.PI) / 2 * n);
 const essais = [`api/tuile/ortho/${z}/${x}/${y}`];
-const dossierAlti = path.join(site, 'tuiles', 'alti', '13');
+// Le niveau d'altitudes le plus fin du paquet : 13 au zoom 18, 12 au zoom 17.
+const niveauAlti = String(Math.max(...fs.readdirSync(path.join(site, 'tuiles', 'alti')).map(Number)));
+const dossierAlti = path.join(site, 'tuiles', 'alti', niveauAlti);
 const ligne = fs.readdirSync(dossierAlti)[0], colonne = fs.readdirSync(path.join(dossierAlti, ligne))[0].split('.')[0];
 essais.push('https://data.geopf.fr/wmts?SERVICE=WMTS&REQUEST=GetTile&VERSION=1.0.0'
   + '&LAYER=ELEVATION.ELEVATIONGRIDCOVERAGE.HIGHRES&STYLE=normal&FORMAT=image/x-bil;bits=32'
-  + `&TILEMATRIXSET=WGS84G_6_14&TILEMATRIX=13&TILEROW=${ligne}&TILECOL=${colonne}`);
+  + `&TILEMATRIXSET=WGS84G_6_14&TILEMATRIX=${niveauAlti}&TILEROW=${ligne}&TILECOL=${colonne}`);
 const resultats = await page.evaluate(async urls => Promise.all(urls.map(async u => {
   try { const r = await fetch(u); return [u, r.status, r.headers.get('content-type'), (await r.arrayBuffer()).byteLength]; }
   catch (e) { return [u, 'échec', e.message, 0]; }

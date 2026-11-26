@@ -21,7 +21,11 @@
     const installer = (async () => {
       await navigator.serviceWorker.register('sw.js');
       await navigator.serviceWorker.ready;
-      if (!navigator.serviceWorker.controller) {
+      // Le sien, pas celui d'un site parent : Canjuers est publié sous
+      // canjuers/ dans le site de CENZUB, dont le service worker couvre
+      // aussi ce dossier et ne connaît pas ses réponses.
+      const mien = new URL('sw.js', location.href).href;
+      if (!navigator.serviceWorker.controller || navigator.serviceWorker.controller.scriptURL !== mien) {
         await new Promise(r => navigator.serviceWorker.addEventListener('controllerchange', r, { once: true }));
       }
     })();

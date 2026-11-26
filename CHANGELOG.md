@@ -15,6 +15,15 @@ messages de commit et dans les commentaires des modules.
 
 ### Ajouté
 
+- **Un camp en ligne, à côté de CENZUB** (26 novembre 2026) : l'option
+  « publier » du workflow « Camp hors réseau (horizon) » range le dossier du
+  camp sur la branche `site-<camp>`, que le workflow de CENZUB publie sous
+  `<camp>/` dans le même site GitHub Pages (un seul site par dépôt, 1 Go au
+  plus : le zoom 17 est conseillé, le zoom 18 de Canjuers fait 852 Mo).
+  Chaque dossier garde son service worker : celui de CENZUB, qui couvre aussi
+  le sous-dossier, n'est plus pris pour le sien, et sans service worker les
+  tuiles de l'horizon sont lues dans le paquet.
+
 - **Préparation de mission** (26 novembre 2026), section du panneau de la vue
   3D : un poste posé sur le terrain avec ses hauteurs d'optique et
   d'exposition (types courants, ordres de grandeur à corriger) ; ligne de vue

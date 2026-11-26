@@ -72,6 +72,17 @@ jobs:
         with:
           name: cenzub-hors-reseau
           path: site
+      # Les camps publiés par horizon.yml (publier) : branches site-<camp>,
+      # rangées sous <camp>/ à côté de CENZUB. Après l'artefact hors réseau
+      # de CENZUB, qui reste à sa taille.
+      - name: Camps publiés en ligne (branches site-*)
+        run: |
+          for b in $(git ls-remote --heads origin 'site-*' | sed 's#.*refs/heads/##'); do
+            git clone -q --depth 1 -b "$b" "https://github.com/${{ github.repository }}" "site/${b#site-}"
+            rm -rf "site/${b#site-}/.git"
+            echo "$b → ${b#site-}/ ($(du -sh "site/${b#site-}" | cut -f1))"
+          done
+          du -sh site
       - uses: actions/upload-pages-artifact@v3
         with: { path: site }
 
