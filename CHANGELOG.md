@@ -75,6 +75,13 @@ messages de commit et dans les commentaires des modules.
   débattement, et la ligne de vue dit « je peux le traiter » ou non. Décocher
   « Ligne de vue » efface la ligne tracée.
 
+- **Les bâtiments d'un camp** (26 novembre 2026) : sur la vue d'ensemble
+  d'un camp (`&vaste=1`), les bâtiments BD TOPO du camp et de 5 km autour
+  sont posés en volume à leur hauteur (3 m par étage, un étage sinon), sans
+  la végétation, avec un bouton « Bâtiments » ; les calculs de vue de la
+  préparation de mission les prennent comme obstacles. Canjuers : 27 085
+  bâtiments, 3,1 Mo (0,8 Mo compressé), gardés dans
+  `zones/canjuers-batiments.json` (`outils/paquet_horizon.py batiments`).
 - **Le pourtour et les repères d'un camp** (26 novembre 2026) : en
   navigation sur tout un camp (`&vaste=1`), le contour du camp est tracé en
   rouge sur le relief, et un bouton « Repères » montre les communes, hameaux,
