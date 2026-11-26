@@ -15,6 +15,17 @@ messages de commit et dans les commentaires des modules.
 
 ### Ajouté
 
+- **Bréchage : obstacles en volume et carte d'intervisibilité** (26 novembre
+  2026). Les barbelés sont des rouleaux de concertina avec un piquet tous les
+  3 m, les mines trois rangées en quinconce sur une bande rouge pâle, le
+  merlon un talus de 2 m posé sur le relief. Il n'y a plus de camp ni d'arme à
+  choisir : une carte de chaleur montre, de chaque endroit alentour (cellules
+  de 24 m à 1 500 m), la part de l'obstacle qu'on voit à la hauteur d'œil
+  choisie, et numérote les dix meilleurs endroits à 100 m au moins,
+  espacés de 120 m, avec leurs coordonnées MGRS. Au CENZUB, aucune position
+  « défenseur » n'était proposée : le poste MMP avait l'œil à 0,5 m, au-delà de
+  300 m, et sous 20 % de l'obstacle vu, rien ne s'affichait. Calcul en 2,2 s
+  sous un GPU logiciel.
 - **Calculs de vue sur tout le relief, Griffon VOA, bréchage repris** (26
   novembre 2026). Sur un camp vaste (Canjuers : scène de 150 m, anneau de
   2 km), un clic au-delà de l'anneau ne touchait rien, et ni la ligne de vue,
