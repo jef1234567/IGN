@@ -296,10 +296,6 @@ html.tiroir #credits { left:12px; max-width:none; }
 #mi-hud { position:absolute; left:50%; bottom:48px; transform:translateX(-50%); z-index:5; background:rgba(20,23,28,.85);
     color:#e6e6e6; font-size:12px; padding:5px 10px; border-radius:6px; pointer-events:none; white-space:nowrap; }
 
-#camp-legende { margin-top:8px; font-size:10px; color:var(--muted); display:grid; gap:3px; }
-#camp-legende[hidden] { display:none; }
-#camp-legende i { display:inline-block; width:14px; height:4px; border-radius:2px; margin-right:6px; vertical-align:middle; }
-#camp-legende b { color:var(--text); font-weight:600; }
 #meteo-resultat { margin-top:8px; }
 .meteo-fleche { display:inline-block; line-height:1; color:var(--accent); }
 .meteo-heures { width:100%; border-collapse:collapse; margin-top:6px; font-size:10px; font-variant-numeric:tabular-nums; }

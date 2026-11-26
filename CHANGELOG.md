@@ -32,19 +32,13 @@ messages de commit et dans les commentaires des modules.
 
 ### Ajouté
 
-- **Couches publiques d'un camp et météo** (26 novembre 2026). Sur un camp
-  vaste (Canjuers), quatre boutons de plus, chacun affichable ou masquable :
-  zones protégées (Natura 2000 ZPS et ZSC, ZNIEFF, parc naturel régional,
-  réserve, arrêtés de biotope : INPN), lignes électriques et transformateurs,
-  ponts (avec leur limite de tonnage), gués, points d'eau, citernes DFCI et
-  réservoirs, routes, pistes, chemins et sentiers classés, pistes DFCI et
-  points de rencontre des secours en forêt (BD TOPO, ONF). Une légende compte
-  ce qui est affiché. Lues par `outils/couches_camp.py` et gardées dans
-  `zones/canjuers-couches/` : elles s'affichent hors réseau. Un bouton
-  « Météo et vent » donne, avec du réseau seulement, le vent à 10 et 120 m,
-  les rafales, la température, la pluie et la visibilité pour 12 heures
-  (Open-Meteo, CC BY 4.0) ; hors réseau, la page le dit et attend le retour
-  du réseau.
+- **Météo et vent** (26 novembre 2026). Un bouton « Météo et vent » donne,
+  avec du réseau seulement, le vent à 10 et 120 m, les rafales, la
+  température, la pluie et la visibilité pour 12 heures (Open-Meteo, CC BY
+  4.0) ; hors réseau, la page le dit et attend le retour du réseau. Les
+  quatre couches publiques d'un camp ajoutées le même jour (zones protégées,
+  lignes électriques, ponts et eau, pistes) sont retirées, avec leurs
+  données et leur outil.
 - **Bréchage : obstacles en volume et carte d'intervisibilité** (26 novembre
   2026). Les barbelés sont des rouleaux de concertina avec un piquet tous les
   3 m, les mines trois rangées en quinconce sur une bande rouge pâle, le
