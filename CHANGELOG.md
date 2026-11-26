@@ -33,7 +33,8 @@ messages de commit et dans les commentaires des modules.
   plus : le zoom 17 est conseillé, le zoom 18 de Canjuers fait 852 Mo).
   Chaque dossier garde son service worker : celui de CENZUB, qui couvre aussi
   le sous-dossier, n'est plus pris pour le sien, et sans service worker les
-  tuiles de l'horizon sont lues dans le paquet.
+  tuiles de l'horizon sont lues dans le paquet. Le workflow du scénario seul
+  (`scenario.yml`) reprend aussi ces dossiers : il effaçait le camp du site.
 
 ### Modifié
 
