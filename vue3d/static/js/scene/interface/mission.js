@@ -880,3 +880,7 @@ export const etatMission = () => ({
     postes: postes.map(q => ({ nom: q.nom, p: q.p, optique: q.optique, expo: q.expo, site: q.site })),
     choisi: choisi && choisi.nom, cible, modeClic, carte, regard: !!regard,
 });
+
+// Pour le bréchage (interface/brechage.js), qui vient après et calcule sur
+// les mêmes objets, avec les mêmes marqueurs et traits.
+export { TYPES, pointAuSol, obstacles, empechement, marqueur, placer, tracer, effacerTrait, drape, altitude, fmt };

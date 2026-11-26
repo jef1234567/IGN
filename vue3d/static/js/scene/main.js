@@ -58,6 +58,7 @@ import './terrain/commandes.js';
 import './interface/soleil.js';
 import './couches/scenario.js';
 import './interface/mission.js';
+import './interface/brechage.js';
 import './interface/partage.js';
 import './interface/boucle.js';
 

@@ -15,6 +15,18 @@ messages de commit et dans les commentaires des modules.
 
 ### Ajouté
 
+- **Bréchage** (26 novembre 2026). Un obstacle se trace sur le terrain
+  (barbelés, mines, merlon, seuls ou ensemble), puis le côté ami. « Chercher
+  les positions » donne les cinq meilleures positions du défenseur, derrière
+  l'obstacle, entre 300 m et la portée : la part de l'obstacle vue, à portée
+  et dans le débattement, moins la moitié de la part des abords (200 et 400 m
+  devant, œil à 2,5 m) d'où on le voit. Il donne aussi les cinq meilleures
+  positions d'appui de l'attaquant, côté ami, à 100 m au moins :
+  0,6 × l'obstacle vu dans le débattement + 0,4 × les positions du défenseur
+  vues. Le calcul suit les lignes de vue dans une grille de hauteurs de ce
+  qui est affiché, rendue d'en haut (1,5 m par case pour 200 m d'obstacle
+  cherché à 1 500 m). Le merlon y monte à 2 m. Cela prend 0,3 s sur une scène
+  d'essai.
 - **Préparation de mission : débattements sourcés, poste sur un toit** (26
   novembre 2026). Les débattements en site viennent de sources ouvertes,
   citées dans `interface/mission.js` : Leclerc −8° à +20° (−142 à +356 ‰),
