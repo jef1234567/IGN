@@ -13,6 +13,19 @@ messages de commit et dans les commentaires des modules.
 
 ## Scène v16 — 21 novembre 2026
 
+### Ajouté
+
+- **Préparation de mission** (26 novembre 2026), section du panneau de la vue
+  3D : un poste posé sur le terrain avec ses hauteurs d'optique et
+  d'exposition (types courants, ordres de grandeur à corriger) ; ligne de vue
+  vers un point, dans les deux sens, avec ce qui masque et à quelle distance,
+  et le profil du sol ; carte de ce que le poste voit et de qui le voit,
+  jusqu'à une portée ; vue depuis l'optique du poste, avec grossissement ;
+  mesures en millièmes (azimut vrai et au carroyage), dénivelé, coordonnées
+  MGRS. Calcul sur le relief, les bâtiments et la végétation affichés, par
+  une carte de distances cubique rendue depuis le poste. MGRS vérifié contre
+  pyproj et GeoTrans (`outils/verifier-mgrs.mjs`).
+
 ### Retiré
 
 - **Interface allégée.** La page de la scène ne garde en vue que ce qui sert

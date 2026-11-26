@@ -97,6 +97,47 @@
             </div>
         </div>
 
+        <div class="section" id="sec-mission">
+            <h2>Préparation de mission</h2>
+            <div class="toggles">
+                <button class="toggle" id="mi-poser" title="Cliquer sur le terrain pour y poser le poste">Poser le poste</button>
+                <button class="toggle" id="mi-ldv" title="Cliquer sur le terrain : ligne de vue du poste à ce point, avec son profil">Ligne de vue</button>
+                <button class="toggle" id="mi-mesurer" title="Deux clics : distance, azimut, dénivelé et coordonnées MGRS">Mesurer</button>
+            </div>
+            <div class="row mi-hauteurs">
+                <label for="mi-type-moi">mon poste</label>
+                <select id="mi-type-moi"></select>
+            </div>
+            <div class="row mi-hauteurs">
+                <label for="mi-optique-moi" title="Hauteur de l'œil ou de l'optique au-dessus du sol">optique</label>
+                <input type="number" id="mi-optique-moi" min="0" max="50" step="0.1" /> <span class="mi-u">m</span>
+                <label for="mi-expo-moi" title="Hauteur du point le plus haut qui dépasse : toit de tourelle, tête">exposé</label>
+                <input type="number" id="mi-expo-moi" min="0" max="50" step="0.1" /> <span class="mi-u">m</span>
+            </div>
+            <div class="row mi-hauteurs">
+                <label for="mi-type-lui">en face</label>
+                <select id="mi-type-lui"></select>
+            </div>
+            <div class="row mi-hauteurs">
+                <label for="mi-optique-lui">optique</label>
+                <input type="number" id="mi-optique-lui" min="0" max="50" step="0.1" /> <span class="mi-u">m</span>
+                <label for="mi-expo-lui">exposé</label>
+                <input type="number" id="mi-expo-lui" min="0" max="50" step="0.1" /> <span class="mi-u">m</span>
+            </div>
+            <div class="row">
+                <label for="mi-portee" title="Au-delà, rien n'est calculé ni coloré">portée</label>
+                <input type="number" id="mi-portee" min="50" max="5000" step="50" value="1500" /> <span class="mi-u">m</span>
+            </div>
+            <div class="toggles" style="margin-top:8px">
+                <button class="toggle" id="mi-vues" disabled title="En vert, le terrain où je vois un ennemi de la hauteur choisie ; en rouge, ce qui m'est masqué">Ce que je vois</button>
+                <button class="toggle" id="mi-vu" disabled title="En rouge, le terrain d'où un ennemi voit mon poste ; en vert, d'où il ne le voit pas">Qui me voit</button>
+                <button class="toggle" id="mi-regard" disabled title="La caméra à l'optique du poste : glisser pour tourner, molette pour les jumelles, Échap pour sortir">Vue du poste</button>
+            </div>
+            <canvas id="mi-profil" width="300" height="110" hidden></canvas>
+            <div id="mi-resultat"></div>
+            <div class="note" id="mi-note">Pose le poste sur le terrain, puis demande ce qu'il voit. Hauteurs : ordres de grandeur, à corriger.</div>
+        </div>
+
         <div class="section" id="sec-moi" hidden>
             <h2>Ma position</h2>
             <div class="stat"><span>précision</span><b id="m-prec">—</b></div>

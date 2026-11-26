@@ -26,9 +26,17 @@ import { DRONE_RECUL, droneActif, drone } from './drone.js';
 // d'atteindre la toile où OrbitControls l'écoute : son facteur fixe ne
 // s'ajoute pas au nôtre.
 const SENSIBILITE_ZOOM = 0.0015;
+// Les modules venus après (interface/mission) prennent le clic ou la molette
+// avant la fiche et le zoom : un rappel qui rend vrai a consommé le geste.
+const preneursClic = [], preneursMolette = [];
+/** `fn(e, souris)` reçoit le clic sur la vue, souris déjà en coordonnées normalisées ; vrai s'il le prend. */
+export function prendreLeClic(fn) { preneursClic.push(fn); }
+/** `fn(e)` reçoit la molette sur la vue ; vrai s'il la prend. */
+export function prendreLaMolette(fn) { preneursMolette.push(fn); }
 window.addEventListener('wheel', e => {
     if (e.target !== renderer.domElement) return;
     e.preventDefault();
+    if (preneursMolette.some(fn => fn(e))) { e.stopPropagation(); return; }
     e.stopPropagation();
     if (orbite) arreterOrbite();
     // deltaMode : 0 = pixels, 1 = lignes, 2 = pages. Firefox et les molettes
@@ -103,6 +111,7 @@ renderer.domElement.addEventListener('pointerup', e => {
     const r = renderer.domElement.getBoundingClientRect();
     souris.x = ((e.clientX - r.left) / r.width) * 2 - 1;
     souris.y = -((e.clientY - r.top) / r.height) * 2 + 1;
+    if (preneursClic.some(fn => fn(e, souris))) return;
     raycaster.setFromCamera(souris, camera);
     const hit = raycaster.intersectObjects(ciblesSurvol, false)[0];
     if (!hit) return;
