@@ -36,7 +36,7 @@ export const STYLES = {
         titre: 'Lignes électriques',
         aide: 'Lignes et postes électriques (BD TOPO), lignes de distribution d\'OpenStreetMap',
         classes: {
-            ht: { couleur: '#ffcc00', libelle: 'Ligne haute tension (BD TOPO)' },
+            ht: { couleur: '#ffcc00', libelle: 'Ligne haute tension' },
             distribution: { couleur: '#ff9500', libelle: 'Ligne de distribution (OSM)' },
             poste: { couleur: '#ffd60a', libelle: 'Poste ou transformateur' },
         },

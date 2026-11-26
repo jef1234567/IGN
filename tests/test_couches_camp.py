@@ -105,7 +105,7 @@ def test_protections_decoupees_sur_la_zone_et_nommees():
     fc = cc.protections(autour, lire)
     assert classes(fc) == ["znieff1"]           # la ZPS lointaine est écartée
     p = fc["features"][0]["properties"]
-    assert p["texte"] == "ZNIEFF 1 Plans de canjuers" and p["fiche"].startswith("https://inpn.mnhn.fr/")
+    assert p["texte"] == "ZNIEFF 1 Plans de Canjuers" and p["fiche"].startswith("https://inpn.mnhn.fr/")
     o, s, e, n = autour.bounds
     xs = [c[0] for c in fc["features"][0]["geometry"]["coordinates"][0]]
     assert min(xs) >= o - 1e-5                  # découpée : plus rien à 6,40

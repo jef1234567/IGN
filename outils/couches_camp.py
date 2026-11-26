@@ -237,6 +237,20 @@ def _objet(geometrie, classe, **props):
             "geometry": geometrie}
 
 
+# Les mots qui restent en minuscules dans un nom de lieu remis en casse.
+PETITS_MOTS = {"de", "du", "des", "la", "le", "les", "et", "en", "sur", "sous", "aux", "au", "d", "l"}
+
+
+def _casse_titre(nom):
+    """« GORGES DE L'ARTUBY, SAINT-ROMAIN » → « Gorges de l'Artuby, Saint-Romain »."""
+    def mot(m, premier):
+        bas = m.group(0).lower()
+        return bas if (bas in PETITS_MOTS and not premier) else bas[:1].upper() + bas[1:]
+    morceaux = re.split(r"([\s,\-'’()]+)", nom)
+    return "".join(re.sub(r"\w+", lambda m: mot(m, i == 0), p) if i % 2 == 0 else p
+                   for i, p in enumerate(morceaux))
+
+
 def _point(lon, lat):
     return {"type": "Point", "coordinates": [round(lon, 5), round(lat, 5)]}
 
@@ -254,7 +268,7 @@ def protections(autour, lire=wfs):
             nom = (p.get("nom_site") or "").strip()
             # Les ZNIEFF sont nommées en capitales : « PLANS DE CANJUERS ».
             if nom.isupper():
-                nom = nom.capitalize()
+                nom = _casse_titre(nom)
             sortie.append(_objet(g, classe, texte=f"{sigle} {nom}".strip(), nom=nom, code=p.get("id_mnhn"),
                                  fiche=p.get("url_fiche"), etiquette=[round(interieur.x, 5), round(interieur.y, 5)]))
     return {"type": "FeatureCollection", "source": LICENCE_INPN, "features": sortie}
@@ -294,13 +308,19 @@ def electricite(autour, lire=wfs, osm=None):
             t = el.get("tags", {})
             if t.get("power") not in ("minor_line", "line", "cable"):
                 continue
-            if t.get("power") == "line" and sortie and any(o["properties"]["classe"] == "ht" for o in sortie):
-                # La haute tension vient de la BD TOPO ; OSM ne la redouble pas.
+            ht = t.get("power") == "line"
+            if ht and any(o["properties"]["classe"] == "ht" for o in sortie):
+                # La haute tension vient de la BD TOPO quand elle l'a ; OSM ne la
+                # redouble pas.
                 continue
             g = _decouper({"type": "LineString", "coordinates": [(q["lon"], q["lat"]) for q in el["geometry"]]}, autour)
             if g is not None:
                 tension = t.get("voltage")
-                sortie.append(_objet(g, "distribution", tension=f"{int(tension) // 1000} kV" if (tension or "").isdigit() else None))
+                tension = f"{int(tension) // 1000} kV" if (tension or "").isdigit() else None
+                mi = shape(g).interpolate(0.5, normalized=True)
+                sortie.append(_objet(g, "ht" if ht else "distribution", tension=tension, osm=True,
+                                     texte=f"Ligne {tension or 'HT'}" if ht else None,
+                                     etiquette=[round(mi.x, 5), round(mi.y, 5)] if ht else None))
         source += " ; lignes de distribution © contributeurs OpenStreetMap, ODbL"
     return {"type": "FeatureCollection", "source": source, "features": sortie}
 

@@ -28,13 +28,12 @@ jobs:
       - uses: actions/setup-python@v5
         with: { python-version: '3.12' }
       - run: pip install -r requirements.txt
-      - name: Inventaire et couches
+      - name: Couches
         env:
           CAMP: ${{ inputs.camp || 'canjuers' }}
         run: |
           mkdir -p sortie
-          timeout 900 python outils/couches_camp.py inventaire "zones/$CAMP.geojson" | tee sortie/inventaire.txt || true
-          python outils/couches_camp.py lire "zones/$CAMP.geojson" sortie | tee sortie/lecture.txt || true
+          python outils/couches_camp.py lire "zones/$CAMP.geojson" sortie | tee lecture.txt
           ls -l sortie
       - name: Branche couches-<camp>
         env:

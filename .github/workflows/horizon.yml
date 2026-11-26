@@ -132,6 +132,20 @@ jobs:
           else timeout 1200 python outils/paquet_horizon.py batiments zone.geojson site/batiments.json \
             || echo "::warning::Bâtiments BD TOPO non lus : le camp est publié sans eux."; fi
           ls -l site/batiments.json || true
+      # Ses couches publiques (interface/couches-camp.js) : zones protégées,
+      # lignes électriques, ponts, gués et points d'eau, pistes classées,
+      # gardées dans le dépôt (zones/<camp>-couches/, outils/couches_camp.py),
+      # sinon lues à la Géoplateforme.
+      - name: Couches publiques du camp
+        if: ${{ !inputs.emprise }}
+        env:
+          CAMP: ${{ inputs.camp || 'Canjuers' }}
+        run: |
+          GARDE="zones/$(echo "$CAMP" | tr '[:upper:]' '[:lower:]')-couches"
+          if [ -f "$GARDE/couches.json" ]; then mkdir -p site/couches && cp "$GARDE"/* site/couches/
+          else timeout 1200 python outils/couches_camp.py lire zone.geojson site/couches \
+            || echo "::warning::Couches publiques non lues : le camp est publié sans elles."; fi
+          ls -l site/couches || true
       - name: Journal du serveur
         if: always()
         run: grep -v "api/tuile" serveur.log | grep -iE "WARNING|ERROR|Traceback|Error" | tail -n 60 || true
