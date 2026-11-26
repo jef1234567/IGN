@@ -55,14 +55,14 @@ export const STYLES = {
     },
     pistes: {
         titre: 'Pistes et chemins',
-        aide: 'Routes, routes empierrées, chemins et sentiers de la BD TOPO, avec leur catégorie DFCI',
+        aide: 'Routes, routes empierrées, chemins et sentiers de la BD TOPO, pistes DFCI et points de rencontre des secours en forêt',
         classes: {
             route: { couleur: '#ffffff', libelle: 'Route revêtue' },
             dfci: { couleur: '#ff375f', libelle: 'Piste DFCI', ep: true },
             empierree: { couleur: '#ffb340', libelle: 'Route empierrée (piste)' },
             chemin: { couleur: '#c69c6d', libelle: 'Chemin' },
             sentier: { couleur: '#bf5af2', libelle: 'Sentier, escalier' },
-            interdit: { couleur: '#8e8e93', libelle: 'Accès véhicule impossible ou réservé' },
+            prsf: { couleur: '#ff3b30', libelle: 'Point de rencontre des secours (ONF)' },
         },
     },
 };
