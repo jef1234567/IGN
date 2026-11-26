@@ -15,6 +15,17 @@ messages de commit et dans les commentaires des modules.
 
 ### Ajouté
 
+- **Préparation de mission : plusieurs postes, étages, débattement** (26
+  novembre 2026). Jusqu'à quatre postes, nommés et colorés, que la carte
+  réunit (case « tous les postes ») ou montre un à un ; « Déplacer » change
+  de place le poste choisi. Un poste se pose aussi sur la façade d'un
+  bâtiment, à l'étage choisi (3 m par étage, l'œil à 0,6 m du mur), ou sur
+  son toit ; la vue du poste regarde alors par la fenêtre. Chaque type porte
+  le débattement en site de son arme (Leclerc −142 à +356 ‰ ; les autres à
+  vérifier) : la carte montre en orange ce qui est vu mais hors de ce
+  débattement, et la ligne de vue dit « je peux le traiter » ou non. Décocher
+  « Ligne de vue » efface la ligne tracée.
+
 - **Un camp en ligne, à côté de CENZUB** (26 novembre 2026) : l'option
   « publier » du workflow « Camp hors réseau (horizon) » range le dossier du
   camp sur la branche `site-<camp>`, que le workflow de CENZUB publie sous
@@ -23,6 +34,18 @@ messages de commit et dans les commentaires des modules.
   Chaque dossier garde son service worker : celui de CENZUB, qui couvre aussi
   le sous-dossier, n'est plus pris pour le sien, et sans service worker les
   tuiles de l'horizon sont lues dans le paquet.
+
+### Modifié
+
+- **Préparation de mission : les bâtiments en vert et rouge** (26 novembre
+  2026). Les cartes « ce que je vois » et « qui me voit » colorent aussi
+  les façades et les toits, jugés en eux-mêmes : une fenêtre d'où l'on voit,
+  ou d'où l'on est vu. En vue du poste, le calque est pâli de moitié pour
+  laisser voir le sol et les façades. Le cadre du profil n'apparaît plus vide
+  avant la première ligne de vue. Les volumes invisibles des ouvrages
+  ajourés (dessinés en points) ne masquent plus rien.
+
+### Ajouté
 
 - **Préparation de mission** (26 novembre 2026), section du panneau de la vue
   3D : un poste posé sur le terrain avec ses hauteurs d'optique et

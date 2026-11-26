@@ -288,8 +288,14 @@ html.tiroir #credits { left:12px; max-width:none; }
 #sec-mission input[type=number] { width:52px; }
 #sec-mission .mi-u { font-size:10px; color:var(--muted); }
 #sec-mission .toggle:disabled { opacity:.45; cursor:default; }
+#mi-postes:empty, #sec-mission [hidden] { display:none; }
+#mi-postes .toggle { display:inline-flex; align-items:center; gap:6px; }
+#mi-postes .toggle i { display:inline-block; width:9px; height:9px; border-radius:50%; }
+#mi-postes .toggle b { font-weight:400; opacity:.7; padding-left:2px; }
+#sec-mission input[type=checkbox] { accent-color:var(--accent); margin:0; }
+#mi-profil[hidden] { display:none; }
 #mi-profil { display:block; width:100%; height:110px; margin-top:8px; background:var(--panel-soft); border-radius:4px; }
-#mi-resultat .vu { color:#4cc26b; } #mi-resultat .masque { color:#e5534b; }
+#mi-resultat .vu { color:#4cc26b; } #mi-resultat .masque { color:#e5534b; } #mi-resultat .hors { color:#f2994a; }
 #mi-legende { position:absolute; left:12px; bottom:12px; z-index:5; background:rgba(20,23,28,.85); color:#e6e6e6;
     font-size:11px; padding:6px 9px; border-radius:6px; pointer-events:none; }
 #mi-legende i { display:inline-block; width:10px; height:10px; border-radius:2px; margin:0 4px -1px 8px; }
