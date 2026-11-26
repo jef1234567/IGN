@@ -15,6 +15,24 @@ messages de commit et dans les commentaires des modules.
 
 ### Ajouté
 
+- **Calculs de vue sur tout le relief, Griffon VOA, bréchage repris** (26
+  novembre 2026). Sur un camp vaste (Canjuers : scène de 150 m, anneau de
+  2 km), un clic au-delà de l'anneau ne touchait rien, et ni la ligne de vue,
+  ni la carte des vues, ni le bréchage ne voyaient le relief au-delà. Un
+  relief de calcul (`interface/reliefcalcul.js`) est désormais tendu sur
+  l'emprise de chaque calcul, au niveau fixe du RGE ALTI que garde le paquet
+  hors réseau (19 m), courbure comprise. Sur 400 lignes de vue d'un monde
+  d'essai, 227 étaient masquées par un relief hors de la scène. Un clic
+  vise aussi l'horizon affiché, et un clic qui ne touche rien le dit.
+  Bréchage : un seul mode de clic à la fois (« Ligne de vue » restée
+  cochée gardait tous les clics), double-clic pour finir le tracé, un
+  message à chaque étape. Nouveau type « Griffon VOA, mât levé » : optique
+  à 6,4 m, sans source ouverte sur le mât. Distances et azimuts mesurés sur
+  l'ellipsoïde plutôt que dans la scène (+0,1 % auparavant), altitudes
+  rendues de la courbure. Audit (`outils/audit_vues/`) : ligne de vue,
+  carte et grille contre une référence Python indépendante, 1 260
+  jugements, aucun désaccord hors des lignes rasantes (à moins de 0,5 m
+  + 2 ‰ du sol).
 - **Bréchage** (26 novembre 2026). Un obstacle se trace sur le terrain
   (barbelés, mines, merlon, seuls ou ensemble), puis le côté ami. « Chercher
   les positions » donne les cinq meilleures positions du défenseur, derrière

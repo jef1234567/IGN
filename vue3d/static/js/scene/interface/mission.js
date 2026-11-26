@@ -17,9 +17,10 @@
 
 import * as THREE from 'three';
 import { scene, camera, renderer, controls, host } from '../socle/rendu.js';
-import { toLonLat } from '../socle/projection.js';
+import { toLonLat, toLocal } from '../socle/projection.js';
 import { terrain, anneauRelief, altitudeRef, exagVert, relief } from '../terrain/etat.js';
-import { ySolPartout } from '../terrain/horizon.js';
+import { tuilesMontrees } from '../terrain/horizon.js';
+import { reliefDeCalcul, reliefCouvre, maillageCalcul, ySolCalcul, chute } from './reliefcalcul.js';
 import { groupeBatiments } from '../batiments/etat.js';
 import { groupeVegetation } from '../vegetation/etat.js';
 import { groupeVegSimple } from '../vegetation/couche.js';
@@ -55,6 +56,10 @@ const TYPES = [
     { nom: 'Griffon', optique: 2.9, expo: 3.3, site: [deg(-20), deg(60)] },
     { nom: 'Jaguar', optique: 2.6, expo: 3.0, site: [deg(-10), deg(45)] },
     { nom: 'Leclerc', optique: 2.3, expo: 2.5, site: [deg(-8), deg(20)] },
+    // Griffon VOA (observation d'artillerie) : l'optique en tête de mât,
+    // 3,5 m au-dessus du toit (2,9 m), valeur donnée par Jean-François le
+    // 26 novembre 2026 ; aucune source ouverte trouvée. Pas d'arme à juger.
+    { nom: 'Griffon VOA, mât levé', optique: 6.4, expo: 6.6, site: null },
 ];
 const TYPE_FENETRE = 2;               // posé à un étage : debout à la fenêtre
 const TYPE_DEFAUT = 4;
@@ -82,7 +87,11 @@ function visible(o) {
     const m = o.material;
     return !(Array.isArray(m) ? m.every(x => x.visible === false) : m && m.visible === false);
 }
-const sols = () => [terrain && terrain.mesh, anneauRelief && anneauRelief.mesh].filter(Boolean);
+// Le sol des calculs : la scène, l'anneau, et au-delà le relief de calcul
+// (interface/reliefcalcul.js), au niveau fixe. Un clic vise aussi l'horizon
+// affiché : sur un camp vaste, c'est presque tout le sol.
+const sols = () => [terrain && terrain.mesh, anneauRelief && anneauRelief.mesh, maillageCalcul()].filter(Boolean);
+const solsVises = () => sols().concat(tuilesMontrees());
 function batis() {
     const liste = [];
     groupeBatiments.traverse(o => { if (o.isMesh && visible(o)) liste.push(o); });
@@ -106,7 +115,7 @@ function natureObstacle(o) {
 /** Point du sol en (x, z) de la scène : { x, z, y, lon, lat, base: 0 }, ou null. */
 function pointAuSol(x, z) {
     const [lon, lat] = toLonLat(x, -z);
-    const y = ySolPartout(lon, lat);
+    const y = ySolCalcul(lon, lat, x, z);
     return y == null ? null : { x, z, y, lon, lat, base: 0, bati: null };
 }
 // Posé sur une façade, le point est écarté du mur de 0,6 m vers l'extérieur :
@@ -120,9 +129,9 @@ const ECART_FACADE = 0.6;
 function pointSous(souris, avecBati) {
     rayon.setFromCamera(souris, camera);
     rayon.near = 0; rayon.far = Infinity;
-    const t = rayon.intersectObjects(avecBati ? sols().concat(batis()) : sols(), false)[0];
+    const t = rayon.intersectObjects(avecBati ? solsVises().concat(batis()) : solsVises(), false)[0];
     if (!t) return null;
-    if (sols().includes(t.object)) return pointAuSol(t.point.x, t.point.z);
+    if (solsVises().includes(t.object)) return pointAuSol(t.point.x, t.point.z);
     const n = t.face ? t.face.normal.clone().transformDirection(t.object.matrixWorld) : new THREE.Vector3(0, 1, 0);
     // Un toit : on s'y tient. Le signe de la normale ne compte pas : certains
     // toits sont tournés vers le bas (ordre de leurs sommets), et leur normale
@@ -146,7 +155,37 @@ function pointSous(souris, avecBati) {
 }
 /** Altitude vraie d'un Y de la scène (exagération à 1, vérifiée avant). */
 const altitude = y => y + altitudeRef;
+/** Altitude vraie du plancher d'un point, courbure de la Terre rendue. */
+const altitudePoint = p => p.y + p.base + altitudeRef + chute(p.lon, p.lat, p.x, p.z);
 const enHaut = (p, h) => new THREE.Vector3(p.x, p.y + p.base + h, p.z);
+
+const HORS_RELIEF = 'Ce clic ne tombe sur aucun relief chargé : rapproche-toi, ou attends que l’horizon se charge.';
+
+/**
+ * Vrai si le relief de calcul couvre les points (à `marge` m près) ; sinon il
+ * est lu, les points non posés sur un bâtiment sont recalés sur lui, puis
+ * `ensuite` est rappelé.
+ */
+function reliefPret(points, marge, ensuite, zone = note) {
+    const b = { x0: Infinity, x1: -Infinity, z0: Infinity, z1: -Infinity };
+    for (const p of points) {
+        b.x0 = Math.min(b.x0, p.x - marge); b.x1 = Math.max(b.x1, p.x + marge);
+        b.z0 = Math.min(b.z0, p.z - marge); b.z1 = Math.max(b.z1, p.z + marge);
+    }
+    if (reliefCouvre(b)) return true;
+    zone.textContent = 'Lecture du relief alentour…';
+    reliefDeCalcul(b).then(() => {
+        for (const p of points) recaler(p);
+        ensuite();
+    }, e => { zone.textContent = `Relief alentour illisible (${e.message}) : calcul impossible.`; });
+    return false;
+}
+/** Le point repris sur le sol des calculs, s'il n'est pas sur un bâtiment. */
+function recaler(p) {
+    if (p.bati) return;
+    const q = pointAuSol(p.x, p.z);
+    if (q) p.y = q.y;
+}
 
 /** Une raison de ne rien calculer, ou null. */
 function empechement() {
@@ -265,9 +304,22 @@ const signe = (v, d = 0) => `${v >= 0 ? '+' : ''}${fmt(v, d)}`;
 const ligneStat = (nom, valeur, classe = '') =>
     `<div class="stat"><span>${nom}</span><b${classe ? ` class="${classe}"` : ''}>${valeur}</b></div>`;
 /** Distance, azimut et dénivelé de a vers b, au niveau de leurs planchers. */
+// La scène est une équirectangulaire à 111 320 m le degré (socle/projection) :
+// juste à quelques centaines de mètres, mais un degré de latitude vaut
+// 111 206 m à 49,5° N (+0,1 %), et sur un camp de 35 km le cosinus du
+// centre fausse l'est-ouest de 0,14 % à 10 km au nord. Les mesures partent
+// donc des longitudes et latitudes, sur les rayons de courbure de WGS 84 à la
+// latitude moyenne : 1 m sur 30 km.
+const A_WGS84 = 6378137, E2_WGS84 = 0.00669437999014;
+function ecartMetres(a, b) {
+    const phi = (a.lat + b.lat) / 2 * Math.PI / 180, s = Math.sin(phi);
+    const w = Math.sqrt(1 - E2_WGS84 * s * s);
+    const M = A_WGS84 * (1 - E2_WGS84) / (w * w * w), N = A_WGS84 / w;
+    return [(b.lon - a.lon) * Math.PI / 180 * N * Math.cos(phi), (b.lat - a.lat) * Math.PI / 180 * M];
+}
 function mesure(a, b) {
-    const de = b.x - a.x, dn = -(b.z - a.z);
-    const horizontale = Math.hypot(de, dn), denivele = (b.y + b.base) - (a.y + a.base);
+    const [de, dn] = ecartMetres(a, b);
+    const horizontale = Math.hypot(de, dn), denivele = altitudePoint(b) - altitudePoint(a);
     return {
         horizontale, denivele,
         milliemes: azimutMilliemes(de, dn),
@@ -284,7 +336,7 @@ function lignesMesure(a, b) {
 }
 const ouEst = p => !p.bati ? '' : p.bati.toit ? ' · toit' : p.bati.etage ? ` · ${p.bati.etage === 1 ? '1er' : p.bati.etage + 'e'} étage` : ' · rez-de-chaussée';
 const lignePoint = (nom, p) =>
-    ligneStat(nom, `${versMgrs(p.lon, p.lat) || '—'} · ${fmt(altitude(p.y + p.base))} m${ouEst(p)}`);
+    ligneStat(nom, `${versMgrs(p.lon, p.lat) || '—'} · ${fmt(altitudePoint(p))} m${ouEst(p)}`);
 
 // --- Postes ----------------------------------------------------------------------------
 // Un poste : son point, son type, ses hauteurs et son débattement (repris du
@@ -425,6 +477,11 @@ function effacerLigneDeVue() {
     profil.hidden = true;
     if (choisi) resultat.innerHTML = lignePoint(choisi.nom.toLowerCase(), choisi.p);
 }
+const quandUnModeCommence = [];
+/** `fn` est rappelée quand un mode de clic de la mission commence (le bréchage s'y coupe). */
+const quandModeMission = fn => quandUnModeCommence.push(fn);
+/** Coupe le mode de clic de la mission, s'il y en a un. */
+function couperModeMission() { if (modeClic) choisirMode(modeClic); }
 function choisirMode(m) {
     // Le bouton « Ligne de vue » décoché efface la ligne tracée.
     if (modeClic === 'ldv' && m === 'ldv' && !regard) effacerLigneDeVue();
@@ -434,6 +491,8 @@ function choisirMode(m) {
         effacerTrait('mesure');
     }
     modeClic = modeClic === m ? null : m;
+    // Un seul mode de clic à la fois : celui du bréchage s'arrête.
+    if (modeClic) for (const fn of quandUnModeCommence) fn();
     for (const [k, b] of Object.entries(BOUTONS_MODE)) b.classList.toggle('on', k === modeClic);
     renderer.domElement.style.cursor = modeClic ? 'crosshair' : '';
     if (modeClic === 'ldv' && !choisi) note.textContent = 'Pose d’abord un poste.';
@@ -450,7 +509,7 @@ prendreLeClic((e, souris) => {
     const gene = empechement();
     if (gene) { note.textContent = gene; return true; }
     const p = pointSous(souris, modeClic !== 'mesurer');
-    if (!p) return true;
+    if (!p) { note.textContent = HORS_RELIEF; return true; }
     if (regard || modeClic === 'ldv') {
         if (!choisi) { note.textContent = 'Pose d’abord un poste.'; return true; }
         cible = p;
@@ -505,6 +564,7 @@ function recalculer() {
 
 function afficherLigneDeVue() {
     const poste = choisi, lui = enFace();
+    if (!reliefPret([poste.p, cible], 50, () => { if (cible && choisi === poste) recalculer(); })) return;
     placer(marqueurCible, cible, lui.optique);
     // Je le vois : de mon optique à son point exposé. Il me voit : de son
     // optique à mon point exposé.
@@ -673,6 +733,13 @@ ${PLACES.map(i => `  if (uN > ${i}) {
 const matCarteBati = matCarte.clone();
 matCarteBati.uniforms = { ...uniformes, uHauteur: { value: 0 } };
 matCarteBati.side = THREE.DoubleSide;
+// Sur le relief de calcul, au-delà de l'anneau, le calque passe devant
+// l'horizon affiché, dont la finesse suit la caméra et qui le couvrirait par
+// endroits de quelques mètres : décalé en profondeur, pas en hauteur, pour
+// juger le même point.
+const matCarteLoin = matCarte.clone();
+matCarteLoin.uniforms = uniformes;
+matCarteLoin.polygonOffsetUnits = -4000;
 const calques = new THREE.Group();
 calques.visible = false;
 scene.add(calques);
@@ -700,6 +767,7 @@ function dessinerCarte() {
     if (gene) { note.textContent = gene; return; }
     const lui = enFace();
     const lesquels = ($('mi-cumul').checked ? postes : [choisi]).filter(Boolean).slice(0, PLACES.length);
+    if (!reliefPret(lesquels.map(q => q.p), portee(), () => { if (carte) recalculer(); })) return;
     const objets = obstacles();
     for (const o of objets) o.layers.enable(COUCHE_CARTE);
     const avant = { fond: scene.background, matiere: scene.overrideMaterial, couleur: new THREE.Color(),
@@ -740,7 +808,7 @@ function dessinerCarte() {
         m.frustumCulled = false;
         calques.add(m);
     };
-    for (const s of sols()) calquer(s, matCarte);
+    for (const s of sols()) calquer(s, s === maillageCalcul() ? matCarteLoin : matCarte);
     for (const b of batis()) if (!b.isInstancedMesh) calquer(b, matCarteBati);
     calques.visible = true;
     legende.hidden = false;
@@ -883,4 +951,72 @@ export const etatMission = () => ({
 
 // Pour le bréchage (interface/brechage.js), qui vient après et calcule sur
 // les mêmes objets, avec les mêmes marqueurs et traits.
-export { TYPES, pointAuSol, obstacles, empechement, marqueur, placer, tracer, effacerTrait, drape, altitude, fmt };
+export { TYPES, altitudePoint, pointAuSol, solsVises, obstacles, reliefPret, recaler, HORS_RELIEF, quandModeMission, couperModeMission, empechement, marqueur, placer, tracer, effacerTrait, drape, altitude, fmt };
+
+// --- Pour l'audit des calculs (outils/audit-vues.mjs) ---------------------------------
+// Les mêmes fonctions que la page, sur des paires données en (lon, lat, hauteur
+// au-dessus du sol) : la ligne de vue (lancer de rayon) et la carte des vues
+// (carte de distances cubique, jugée par le même calcul que le calque).
+
+const versPoint = q => { const [x, y] = toLocal(q.lon, q.lat); return pointAuSol(x, -y); };
+
+/** Pour chaque paire [A, B] : la ligne de vue de A (œil à A.h) vers B (B.h) passe-t-elle ? */
+export async function ligneDeVueEssai(paires) {
+    const pts = paires.flat().map(versPoint);
+    await new Promise((ok, ko) => { if (reliefPret(pts, 50, ok)) ok(); setTimeout(() => ko(new Error('relief')), 60000); });
+    return paires.map(([A, B]) => {
+        const a = versPoint(A), b = versPoint(B);
+        return !premierObstacle(enHaut(a, A.h), enHaut(b, B.h));
+    });
+}
+
+/**
+ * Pour un œil O et des cibles : vues ou non selon la carte de distances
+ * cubique, jugées sur le processeur comme le nuanceur du calque (même biais).
+ * La carte est relue face par face.
+ */
+export async function carteEssai(O, cibles) {
+    const o = versPoint(O), pts = cibles.map(versPoint);
+    await new Promise((ok, ko) => { if (reliefPret([o, ...pts], 50, ok)) ok(); setTimeout(() => ko(new Error('relief')), 60000); });
+    const oeil = enHaut(versPoint(O), O.h);
+    const objets = obstacles();
+    for (const x of objets) x.layers.enable(COUCHE_CARTE);
+    const avant = { fond: scene.background, matiere: scene.overrideMaterial, couleur: new THREE.Color(), alpha: renderer.getClearAlpha() };
+    renderer.getClearColor(avant.couleur);
+    scene.background = null; scene.overrideMaterial = matDistance;
+    renderer.setClearColor(0xffffff, 1);
+    try { rendreDistances(3, oeil, objets); } finally {
+        scene.background = avant.fond; scene.overrideMaterial = avant.matiere;
+        renderer.setClearColor(avant.couleur, avant.alpha);
+        for (const x of objets) x.layers.disable(COUCHE_CARTE);
+    }
+    // Lecture par le GPU, comme le calque : un point par cible, dans une cible de n × 1.
+    const n = cibles.length;
+    const cible = new THREE.WebGLRenderTarget(n, 1, { type: THREE.FloatType });
+    const geo = new THREE.BufferGeometry();
+    const pos = new Float32Array(n * 3), rang = new Float32Array(n);
+    cibles.forEach((c, i) => { const v = enHaut(versPoint(c), c.h); pos.set([v.x, v.y, v.z], i * 3); rang[i] = i; });
+    geo.setAttribute('position', new THREE.BufferAttribute(pos, 3));
+    geo.setAttribute('rang', new THREE.BufferAttribute(rang, 1));
+    const mat = new THREE.ShaderMaterial({
+        uniforms: { uD: { value: cubes[3].cible.texture }, uO: { value: oeil }, uLoin: { value: LOIN }, uN: { value: n } },
+        vertexShader: `attribute float rang; uniform float uN; varying vec3 vP;
+void main() { vP = position; gl_PointSize = 1.0; gl_Position = vec4((rang + 0.5) / uN * 2.0 - 1.0, 0.0, 0.0, 1.0); }`,
+        fragmentShader: `uniform samplerCube uD; uniform vec3 uO; uniform float uLoin; varying vec3 vP;
+void main() { vec3 d = vP - uO; float L = length(d);
+  gl_FragColor = vec4(L > textureCube(uD, d).r * uLoin + 0.3 + 0.002 * L ? 0.0 : 1.0, 0.0, 0.0, 1.0); }`,
+    });
+    const points = new THREE.Points(geo, mat);
+    points.frustumCulled = false;      // ses positions sont du monde, pas de l'écran
+    const sc = new THREE.Scene(); sc.add(points);
+    const lu = new Float32Array(n * 4);
+    const avantCible = renderer.getRenderTarget();
+    renderer.setRenderTarget(cible);
+    renderer.setClearColor(0x000000, 0); renderer.clear();
+    renderer.render(sc, new THREE.Camera());
+    renderer.readRenderTargetPixels(cible, 0, 0, n, 1, lu);
+    renderer.setRenderTarget(avantCible);
+    renderer.setClearColor(avant.couleur, avant.alpha);
+    cible.dispose(); geo.dispose(); mat.dispose();
+    return cibles.map((_, i) => lu[i * 4] > 0.5);
+}
