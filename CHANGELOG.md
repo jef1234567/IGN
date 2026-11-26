@@ -13,6 +13,13 @@ messages de commit et dans les commentaires des modules.
 
 ## Scène v16 — 21 novembre 2026
 
+### Modifié
+
+- **Débattement en site saisi en degrés** (26 novembre 2026). Les champs du
+  site minimal et maximal d'un poste, le résultat de la ligne de vue et la vue
+  du poste parlent en degrés (Leclerc −8° à +20°), le millième restant entre
+  parenthèses à côté du site mesuré. Les azimuts restent en millièmes.
+
 ### Ajouté
 
 - **Bréchage : obstacles en volume et carte d'intervisibilité** (26 novembre
@@ -70,7 +77,7 @@ messages de commit et dans les commentaires des modules.
   de place le poste choisi. Un poste se pose aussi sur la façade d'un
   bâtiment, à l'étage choisi (3 m par étage, l'œil à 0,6 m du mur), ou sur
   son toit ; la vue du poste regarde alors par la fenêtre. Chaque type porte
-  le débattement en site de son arme (Leclerc −142 à +356 ‰ ; les autres à
+  le débattement en site de son arme (Leclerc −8° à +20° ; les autres à
   vérifier) : la carte montre en orange ce qui est vu mais hors de ce
   débattement, et la ligne de vue dit « je peux le traiter » ou non. Décocher
   « Ligne de vue » efface la ligne tracée.

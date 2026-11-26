@@ -34,8 +34,8 @@ const $ = id => document.getElementById(id);
 
 // Par type : hauteur de l'optique (œil, épiscope, viseur) et du point le plus
 // haut qui dépasse (tête, toit de tourelle), en mètres au-dessus du sol ou du
-// plancher ; débattement en site de l'arme principale, en millièmes
-// (6 400 au tour, 1° = 17,78 ‰), null sans limite utile. Les hauteurs sont
+// plancher ; débattement en site de l'arme principale, en degrés (le
+// millième n'est donné qu'à côté), null sans limite utile. Les hauteurs sont
 // des ordres de grandeur ; les débattements viennent de sources ouvertes,
 // lues le 26 novembre 2026 :
 //   Leclerc, canon CN120-26 : −8° à +20° (Wikipédia anglaise, « AMX Leclerc »).
@@ -47,16 +47,15 @@ const $ = id => document.getElementById(id);
 //   Griffon, tourelleau téléopéré T1 Hornet (Arquus) : −20° à +60°
 //     (Wikipédia anglaise, « VBMR Griffon »).
 //   MMP : aucune source ouverte sur un débattement ; sans limite.
-const deg = d => Math.round(d * 6400 / 360);
 const TYPES = [
     { nom: 'Fantassin couché', optique: 0.4, expo: 0.5, site: null },
     { nom: 'Fantassin à genou', optique: 1.0, expo: 1.2, site: null },
     { nom: 'Fantassin debout', optique: 1.6, expo: 1.8, site: null },
     { nom: 'Poste MMP au sol', optique: 0.5, expo: 0.7, site: null },
-    { nom: 'VBCI', optique: 2.6, expo: 3.0, site: [deg(-8), deg(45)] },
-    { nom: 'Griffon', optique: 2.9, expo: 3.3, site: [deg(-20), deg(60)] },
-    { nom: 'Jaguar', optique: 2.6, expo: 3.0, site: [deg(-10), deg(45)] },
-    { nom: 'Leclerc', optique: 2.3, expo: 2.5, site: [deg(-8), deg(20)] },
+    { nom: 'VBCI', optique: 2.6, expo: 3.0, site: [-8, 45] },
+    { nom: 'Griffon', optique: 2.9, expo: 3.3, site: [-20, 60] },
+    { nom: 'Jaguar', optique: 2.6, expo: 3.0, site: [-10, 45] },
+    { nom: 'Leclerc', optique: 2.3, expo: 2.5, site: [-8, 20] },
     // Griffon VOA (observation d'artillerie) : l'optique en tête de mât,
     // 3,5 m au-dessus du toit (2,9 m), valeur donnée par Jean-François le
     // 26 novembre 2026 ; aucune source ouverte trouvée. Pas d'arme à juger.
@@ -440,7 +439,7 @@ for (const c of Object.values(champs)) c.addEventListener('change', () => {
     choisi.expo = Math.max(0, Number(champs.expo.value) || 0);
     const lu = c => c.value.trim() === '' ? null : Number(c.value);
     const [a, b] = [lu(champs.siteMin), lu(champs.siteMax)];
-    choisi.site = a == null && b == null ? null : [a ?? -1600, b ?? 1600];
+    choisi.site = a == null && b == null ? null : [a ?? -90, b ?? 90];
     recalculer();
 });
 selEtage.addEventListener('change', () => {
@@ -466,10 +465,12 @@ const portee = () => Math.max(50, Number($('mi-portee').value) || 1500);
 $('mi-portee').addEventListener('change', recalculer);
 $('mi-cumul').addEventListener('change', () => { if (carte) dessinerCarte(); });
 
-/** Le site, en millièmes, sous lequel l'arme du poste voit le point visé. */
+/** Le site, en degrés, sous lequel l'arme du poste voit le point visé. */
 function siteVers(poste, de, vers) {
-    return Math.atan2(vers.y - de.y, Math.hypot(vers.x - de.x, vers.z - de.z)) * 3200 / Math.PI;
+    return Math.atan2(vers.y - de.y, Math.hypot(vers.x - de.x, vers.z - de.z)) * 180 / Math.PI;
 }
+/** Un site en degrés, le millième (6 400 au tour) entre parenthèses. */
+const siteTexte = d => `${signe(d, 1)}° (${signe(Math.round(d * 6400 / 360))} ‰)`;
 
 // --- État et modes de clic ----------------------------------------------------------
 
@@ -593,10 +594,10 @@ function afficherLigneDeVue() {
     if (poste.site && !jeVois) {
         const dedans = site >= poste.site[0] && site <= poste.site[1];
         traiter = ligneStat('je peux le traiter', dedans ? 'oui'
-            : `non, site ${signe(site)} ‰ hors de ${signe(poste.site[0])} à ${signe(poste.site[1])} ‰`, dedans ? 'vu' : 'hors');
+            : `non, site ${signe(site, 1)}° hors de ${signe(poste.site[0], 1)}° à ${signe(poste.site[1], 1)}°`, dedans ? 'vu' : 'hors');
     }
     resultat.innerHTML = lignePoint(poste.nom.toLowerCase(), poste.p) + lignePoint('point visé', cible) + lignesMesure(poste.p, cible)
-        + ligneStat('site', `${signe(site)} ‰`)
+        + ligneStat('site', siteTexte(site))
         + ligneStat('je le vois', dit(jeVois, 'oui'), jeVois ? 'masque' : 'vu') + traiter
         + ligneStat('il me voit', dit(ilVoit, 'oui'), ilVoit ? 'masque' : 'vu');
     const L = mesure(poste.p, cible).horizontale;
@@ -794,7 +795,7 @@ function dessinerCarte() {
             uniformes[`uD${i}`].value = rendreDistances(i, O, objets);
             uniformes[`uO${i}`].value.copy(O);
             const s = carte === 'vues' && poste.site;
-            uniformes[`uSite${i}`].value.set(s ? s[0] * Math.PI / 3200 : -10, s ? s[1] * Math.PI / 3200 : 10);
+            uniformes[`uSite${i}`].value.set(s ? s[0] * Math.PI / 180 : -10, s ? s[1] * Math.PI / 180 : 10);
         });
     } finally {
         scene.background = avant.fond;
@@ -871,10 +872,10 @@ function appliquerRegard() {
     controls.target.copy(O).addScaledVector(dir, 30);
     camera.lookAt(controls.target);
     const grossissement = Math.tan(FOV_NU * Math.PI / 360) / Math.tan(camera.fov * Math.PI / 360);
-    const site = regard.site * 3200 / Math.PI;
+    const site = regard.site * 180 / Math.PI;
     const hors = choisi.site && (site < choisi.site[0] || site > choisi.site[1]) ? ' (hors débattement)' : '';
     hud.textContent = `${choisi.nom} · Az ${fmt(Math.round(azimutMilliemes(Math.sin(regard.cap), Math.cos(regard.cap))) % 6400)} ‰`
-        + ` · site ${signe(site)} ‰${hors} · ×${fmt(grossissement, 1)} · glisser pour tourner, molette pour grossir, Échap pour sortir`;
+        + ` · site ${siteTexte(site)}${hors} · ×${fmt(grossissement, 1)} · glisser pour tourner, molette pour grossir, Échap pour sortir`;
 }
 function entrerRegard() {
     if (droneActif) { note.textContent = 'Sors du drone d’abord.'; return; }
