@@ -12,9 +12,6 @@ on:
       camp:
         description: "Contour gardé dans zones/ (sans .geojson)"
         default: "canjuers"
-  push:
-    branches: [couches-camp]
-    paths: [outils/couches_camp.py, .github/workflows/couches-camp.yml]
 
 permissions:
   contents: write
