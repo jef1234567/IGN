@@ -9,12 +9,11 @@ jobs:
   lire:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-python@v5
-        with: { python-version: '3.12' }
-      - run: pip install -r requirements.txt
-      - run: python outils/paquet_horizon.py reperes zones/canjuers.geojson canjuers-reperes.geojson && ls -l canjuers-reperes.geojson
       - run: |
-          mkdir -p /tmp/z && cp canjuers-reperes.geojson /tmp/z/ && cd /tmp/z && git init -q -b reperes-donnees
-          git add . && git -c user.name=ci -c user.email=ci@localhost commit -q -m "repères Canjuers"
-          git push -qf "https://x-access-token:${{ github.token }}@github.com/${{ github.repository }}" reperes-donnees
+          for t in lieu_dit_non_habite zone_d_habitation detail_orographique toponymie_lieux_nommes toponymie_voies_nommees troncon_de_route route_numerotee_ou_nommee; do
+            echo "== $t"
+            curl -s "https://data.geopf.fr/wfs/ows?SERVICE=WFS&VERSION=2.0.0&REQUEST=GetFeature&TYPENAMES=BDTOPO_V3:$t&COUNT=2&OUTPUTFORMAT=application/json&BBOX=43.68,6.40,43.72,6.48,urn:ogc:def:crs:EPSG::4326" | python3 -c "import json,sys
+d=json.load(sys.stdin); f=d.get('features',[])
+print(len(f), d.get('numberMatched'))
+for x in f: print(x['geometry']['type'], {k:v for k,v in x['properties'].items() if v not in (None,'')})" 2>&1 | head -6
+          done
