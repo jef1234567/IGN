@@ -53,7 +53,10 @@ BDTOPO = {
     "troncon_de_route": ("nature", "importance", "largeur_de_chaussee", "nombre_de_voies",
                          "acces_vehicule_leger", "position_par_rapport_au_sol", "restriction_de_poids_total",
                          "restriction_de_largeur", "nom_collaboratif_gauche", "etat_de_l_objet",
-                         "itineraire_vert", "periode_de_fermeture"),
+                         "itineraire_vert", "periode_de_fermeture", "piste_dfci", "categorie_dfci",
+                         "gabarit_dfci", "tout_terrain_dfci", "nature_detaillee_dfci", "prive",
+                         "ouvrage_d_art_limitant_dfci", "pente_maximale_dfci", "restriction_de_hauteur",
+                         "restriction_de_poids_par_essieu", "nature_de_la_restriction", "urbain"),
 }
 
 
@@ -85,6 +88,9 @@ def wfs(typename, autour):
         debut += PAGE
 
 
+RE_PROTEGE = re.compile(r"PROTECTEDAREAS|natura|znieff|zps|zsc|sic\b|parc|réserve|reserve|biotope|apb|rnn|rnr|ramsar|conservatoire", re.I)
+
+
 def couches_protegees():
     """Les noms des couches PROTECTEDAREAS.* du WFS de la Géoplateforme."""
     xml = get(f"{URL_WFS}?SERVICE=WFS&VERSION=2.0.0&REQUEST=GetCapabilities").text
@@ -93,7 +99,7 @@ def couches_protegees():
     for ft in racine.iter("{http://www.opengis.net/wfs/2.0}FeatureType"):
         nom = ft.findtext("{http://www.opengis.net/wfs/2.0}Name") or ""
         titre = ft.findtext("{http://www.opengis.net/wfs/2.0}Title") or ""
-        if nom.upper().startswith("PROTECTEDAREAS"):
+        if RE_PROTEGE.search(nom + " " + titre):
             noms.append((nom, titre))
     return noms
 
@@ -101,11 +107,17 @@ def couches_protegees():
 def inventaire(zone):
     autour = elargir(zone, MARGE_M)
     for nom, titre in couches_protegees():
-        objets = wfs(nom, autour)
+        try:
+            objets = wfs(nom, autour)
+        except requests.RequestException as e:
+            print(f"\n== {nom} ({titre}) : illisible ({e})")
+            continue
         print(f"\n== {nom} ({titre}) : {len(objets)}")
+        if not objets:
+            continue
         if objets:
             print("   attributs :", sorted(objets[0]["properties"]))
-            for f in objets[:12]:
+            for f in objets[:6]:
                 print("   ", {k: v for k, v in f["properties"].items() if isinstance(v, (str, int, float)) and len(str(v)) < 80})
     for couche, attributs in BDTOPO.items():
         objets = wfs(f"BDTOPO_V3:{couche}", autour)
