@@ -32,19 +32,29 @@ const $ = id => document.getElementById(id);
 
 // Par type : hauteur de l'optique (œil, épiscope, viseur) et du point le plus
 // haut qui dépasse (tête, toit de tourelle), en mètres au-dessus du sol ou du
-// plancher ; débattement en site de l'arme principale, en millièmes, null
-// sans limite utile (arme à l'épaule). Ordres de grandeur, pas une fiche
-// technique : les champs se corrigent. Le Leclerc (−8° à +20°) est le plus
-// sûr ; les autres sont à vérifier.
+// plancher ; débattement en site de l'arme principale, en millièmes
+// (6 400 au tour, 1° = 17,78 ‰), null sans limite utile. Les hauteurs sont
+// des ordres de grandeur ; les débattements viennent de sources ouvertes,
+// lues le 26 novembre 2026 :
+//   Leclerc, canon CN120-26 : −8° à +20° (Wikipédia anglaise, « AMX Leclerc »).
+//   VBCI, canon 25M811 en tourelle DRAGAR : −8° à +45° (Army Guide, fiche
+//     « 25 M811 »). Fiche du fabricant (KNDS) muette.
+//   Jaguar, canon 40 CTA en tourelle T40 : −10° à +45° (Wikipédia anglaise,
+//     « 40CT cannon », pour le Jaguar). La T40 du VBCI Mk2 monte à +60°
+//     (fiche KNDS) : pas la même tourelle.
+//   Griffon, tourelleau téléopéré T1 Hornet (Arquus) : −20° à +60°
+//     (Wikipédia anglaise, « VBMR Griffon »).
+//   MMP : aucune source ouverte sur un débattement ; sans limite.
+const deg = d => Math.round(d * 6400 / 360);
 const TYPES = [
     { nom: 'Fantassin couché', optique: 0.4, expo: 0.5, site: null },
     { nom: 'Fantassin à genou', optique: 1.0, expo: 1.2, site: null },
     { nom: 'Fantassin debout', optique: 1.6, expo: 1.8, site: null },
     { nom: 'Poste MMP au sol', optique: 0.5, expo: 0.7, site: null },
-    { nom: 'VBCI', optique: 2.6, expo: 3.0, site: [-180, 800] },
-    { nom: 'Griffon', optique: 2.9, expo: 3.3, site: [-350, 1050] },
-    { nom: 'Jaguar', optique: 2.6, expo: 3.0, site: [-180, 800] },
-    { nom: 'Leclerc', optique: 2.3, expo: 2.5, site: [-142, 356] },
+    { nom: 'VBCI', optique: 2.6, expo: 3.0, site: [deg(-8), deg(45)] },
+    { nom: 'Griffon', optique: 2.9, expo: 3.3, site: [deg(-20), deg(60)] },
+    { nom: 'Jaguar', optique: 2.6, expo: 3.0, site: [deg(-10), deg(45)] },
+    { nom: 'Leclerc', optique: 2.3, expo: 2.5, site: [deg(-8), deg(20)] },
 ];
 const TYPE_FENETRE = 2;               // posé à un étage : debout à la fenêtre
 const TYPE_DEFAUT = 4;
@@ -114,7 +124,11 @@ function pointSous(souris, avecBati) {
     if (!t) return null;
     if (sols().includes(t.object)) return pointAuSol(t.point.x, t.point.z);
     const n = t.face ? t.face.normal.clone().transformDirection(t.object.matrixWorld) : new THREE.Vector3(0, 1, 0);
-    if (n.y > 0.6) {                // un toit : on s'y tient
+    // Un toit : on s'y tient. Le signe de la normale ne compte pas : certains
+    // toits sont tournés vers le bas (ordre de leurs sommets), et leur normale
+    // horizontale nulle donnait un point hors de la scène, refusé. 0,35 garde
+    // les pans jusqu'à 70° ; une façade est verticale.
+    if (Math.abs(n.y) >= 0.35) {
         const p = pointAuSol(t.point.x, t.point.z);
         if (!p) return null;
         return { ...p, base: Math.max(0, t.point.y - p.y), bati: { toit: true, etages: 0 } };
