@@ -203,6 +203,13 @@
                 <button class="toggle" id="tir-objectif" title="Cliquer sur le terrain : le point visé">Objectif</button>
             </div>
             <div class="row">
+                <label for="tir-trajectoire" title="Courbe : le coup monte haut et tombe raide (mortier). Tendue : il reste bas et tombe à plat (canon). Angles d'école.">trajectoire</label>
+                <select id="tir-trajectoire"></select>
+            </div>
+            <div class="row">
+                <label title="Coché : chaque coup suit sa trajectoire jusqu'au vrai sol (pentes, crêtes). Décoché : sol plat, comme sur une carte."><input type="checkbox" id="tir-relief" checked /> suivre le relief</label>
+            </div>
+            <div class="row">
                 <label for="tir-ep-p" title="Écart probable en portée : la moitié des coups tombe à moins de cette distance, en plus ou en moins, du point moyen">EP portée</label>
                 <input type="number" id="tir-ep-p" min="1" max="2000" step="1" /> <span class="mi-u">m</span>
                 <label for="tir-ep-d" title="Écart probable en direction : la moitié des coups tombe à moins de cette distance à gauche ou à droite">direction</label>
@@ -214,8 +221,10 @@
             </div>
             <div class="toggles">
                 <button class="toggle" id="tir-tirer" disabled title="Tire la salve : chaque point orange est un coup">Tirer</button>
+                <button class="toggle" id="tir-angles" disabled title="En rouge, autour de l'objectif, ce que cette pièce ne peut pas atteindre avec cette trajectoire">Angles morts</button>
                 <button class="toggle" id="tir-effacer" disabled>Effacer</button>
             </div>
+            <canvas id="tir-profil" width="300" height="110" hidden></canvas>
             <div id="tir-resultat"></div>
             <div class="note" id="tir-note">Pose la pièce, puis l'objectif, puis tire. Valeurs d'école pour l'instruction : ni tables de tir, ni éléments de tir.</div>
         </div>

@@ -25,6 +25,20 @@ messages de commit et dans les commentaires des modules.
 
 ### Ajouté
 
+- **Tir indirect d'instruction, lot 2 : le relief** (26 novembre 2026).
+  Chaque coup suit une trajectoire stylisée (une parabole qui arrive au
+  niveau de l'objectif avec l'angle de chute d'école : 65° en tir courbe,
+  35° en tir tendu pour le CAESAR) jusqu'au vrai sol. Une contre-pente
+  allonge la zone de chute, une pente face à la pièce la raccourcit ; la
+  page donne la pente au point visé, l'allongement mesuré sur la salve et
+  celui de la règle tan ω / (tan ω − tan α). Les coups arrêtés par une crête
+  sont en rouge. « Angles morts » colore en rouge, autour de l'objectif, ce
+  que la pièce ne peut pas battre avec cette trajectoire ; « suivre le
+  relief » décoché revient au sol plat pour comparer ; un profil montre le
+  sol et la trajectoire. Vérifié sous Node sur des versants plans (×1,867
+  mesuré contre ×1,866 par la règle à 30° de chute et 15° de pente) et dans
+  Chromium sur une crête synthétique.
+
 - **Tir indirect d'instruction, lot 1 : la dispersion** (26 novembre 2026).
   Une section « Tir indirect (instruction) » pose une pièce (mortier 81,
   mortier 120 ou CAESAR) et un objectif sur le terrain, puis tire une salve
