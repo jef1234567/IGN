@@ -70,7 +70,7 @@ export const STYLES = {
 const AU_DESSUS_M = 3;
 // Les étiquettes d'une couche ne se montrent qu'en deçà de cette distance : 300
 // points d'eau sur 35 km se recouvriraient vus de haut.
-const PORTEE_M = { protections: 40000, electricite: 15000, eau: 6000, pistes: 4000 };
+const PORTEE_M = { protections: 25000, electricite: 15000, eau: 6000, pistes: 4000 };
 const pasDeRayon = () => {};
 
 const $ = id => document.getElementById(id);

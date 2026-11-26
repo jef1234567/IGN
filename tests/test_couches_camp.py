@@ -107,8 +107,14 @@ def test_protections_decoupees_sur_la_zone_et_nommees():
     p = fc["features"][0]["properties"]
     assert p["texte"] == "ZNIEFF 1 Plans de Canjuers" and p["fiche"].startswith("https://inpn.mnhn.fr/")
     o, s, e, n = autour.bounds
-    xs = [c[0] for c in fc["features"][0]["geometry"]["coordinates"][0]]
+    g = fc["features"][0]["geometry"]
+    assert g["type"] in ("LineString", "MultiLineString")
+    lignes = [g["coordinates"]] if g["type"] == "LineString" else g["coordinates"]
+    xs = [c[0] for l in lignes for c in l]
     assert min(xs) >= o - 1e-5                  # découpée : plus rien à 6,40
+    # Seul le vrai bord est tracé (nord, sud et est de la ZNIEFF), pas la
+    # coupure à l'ouest, le long de la marge.
+    assert all(min(abs(c[1] - 43.70), abs(c[1] - 43.68), abs(c[0] - 6.45)) < 1e-4 for l in lignes for c in l)
     assert "INPN" in fc["source"]
 
 

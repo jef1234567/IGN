@@ -261,10 +261,17 @@ def protections(autour, lire=wfs):
     for typename, (classe, sigle) in PROTECTIONS.items():
         for f in lire(typename, autour):
             p = f["properties"]
-            g = _decouper(f["geometry"], autour, simplifier=0.0002)
-            if g is None:
+            dedans = _decouper(f["geometry"], autour, simplifier=0.0002)
+            if dedans is None:
                 continue
-            interieur = shape(g).representative_point()
+            # Le vrai bord seulement : découpé en polygone, une zone plus grande
+            # que le camp montrerait un faux bord le long de la marge.
+            zone = shape(f["geometry"])
+            g = _decouper(mapping(zone.boundary if zone.is_valid else zone.buffer(0).boundary), autour, simplifier=0.0002)
+            interieur = shape(dedans).representative_point()
+            if g is None:
+                # Le camp entier dans la zone : son bord passe hors de la marge.
+                g = {"type": "MultiLineString", "coordinates": []}
             nom = (p.get("nom_site") or "").strip()
             # Les ZNIEFF sont nommées en capitales : « PLANS DE CANJUERS ».
             if nom.isupper():

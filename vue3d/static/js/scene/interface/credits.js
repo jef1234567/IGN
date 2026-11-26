@@ -43,6 +43,7 @@ export function majCredits() {
         html += ' · Zones protégées : <a href="https://inpn.mnhn.fr/" target="_blank" rel="noopener">INPN</a>'
             + ' (PatriNat : MNHN, OFB), Licence Ouverte 2.0';
     }
+    if (camp.some(c => /ONF/.test(c.source))) html += ' · Points de rencontre des secours en forêt : ONF';
     if (cite('meteo')) {
         html += ' · Météo : <a href="https://open-meteo.com/" target="_blank" rel="noopener">Open-Meteo.com</a>, CC BY 4.0';
     }
